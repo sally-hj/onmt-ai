@@ -1,3 +1,22 @@
+# Données locales (ne jamais versionner le contenu)
+local_data/*
+!local_data/.gitkeep
+!local_data/*/
+local_data/*/*
+!local_data/*/.gitkeep
+/local_data/
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Environnement
+.env
+
+# Node
+node_modules/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
