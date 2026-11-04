@@ -1,0 +1,157 @@
+from datetime import datetime, timezone
+from uuid import uuid4
+
+from app.core.errors import AppError, forbidden
+from app.core.security import ResourcePolicy, authorize, private_policy, require_module
+from app.schemas.analysis import AnalysisResult
+from app.schemas.report import ReportRequest, ReportResult
+from .documents import DocumentRecord, Evidence
+from .generation import generate_sections, revision_style
+from .validation import collect_sources, verify_report
+
+DEPENDENTS = {
+    'diagnostic': ['summary', 'recommendations', 'limitations'],
+    'comparison': ['summary', 'recommendations', 'limitations'],
+    'forecast': ['summary', 'recommendations', 'limitations'],
+    'recommendations': ['summary'], 'summary': [], 'limitations': ['summary'],
+}
+
+
+class ReportService:
+    def __init__(self, store, provider, retriever, planner=None):
+        self.store, self.provider, self.retriever, self.planner = store, provider, retriever, planner
+
+    def _analyses(self, ids, access):
+        analyses = []
+        for analysis_id in ids:
+            a = self.provider.get_analysis(analysis_id, access)
+            a = AnalysisResult.model_validate(a)
+            if a.analysis_id != analysis_id:
+                raise AppError('tool_failed', 'Le fournisseur a retourné un identifiant d’analyse incohérent.', 502)
+            analyses.append(a)
+        return analyses
+
+    def create_report(self, request: ReportRequest, access_context) -> ReportResult:
+        require_module(access_context, True)
+        analyses = self._analyses(request.analysis_ids, access_context)
+        found = self.retriever.search_evidence(request.title, access_context)
+        evidence, styles = found.evidence, {}
+        if self.planner:
+            plan = self.planner.plan(request.language, request.audience, '', evidence)
+            evidence = [e for e in evidence if e.passage.chunk_id in plan.evidence_ids]
+            styles = {s: plan.style for s in request.sections}
+        warnings = list(found.warnings)
+        for a in analyses:
+            warnings.extend(a.warnings)
+            if not a.sources:
+                warnings.append(f'analysis_sources_absent:{a.analysis_id}')
+            if a.status != 'ok':
+                warnings.append(f'analysis_{a.status}:{a.analysis_id}')
+        if any(a.is_synthetic for a in analyses):
+            warnings.append('synthetic_data')
+        report_id = 'rpt_' + uuid4().hex
+        result = ReportResult(request_id=request.request_id, report_id=report_id, version=1, status='completed',
+                              sections=generate_sections(request, analyses, evidence, styles),
+                              sources=collect_sources(analyses, evidence), download_path=None,
+                              warnings=sorted(set(warnings)), is_synthetic=any(a.is_synthetic for a in analyses))
+        verify_report(result, request, analyses, evidence, styles)
+        payload = {'result': result.model_dump(mode='json'), 'request': request.model_dump(mode='json'),
+                   'policy': private_policy(access_context).model_dump(), 'analyses': [a.model_dump(mode='json') for a in analyses],
+                   'evidence': [e.model_dump(mode='json') for e in evidence], 'styles': styles,
+                   'section_versions': {s.section_id: 1 for s in result.sections},
+                   'created_at': datetime.now(timezone.utc).isoformat()}
+        self.store.save_report(payload)
+        self.store.audit(access_context.user_id, request.request_id, 'report.create', report_id)
+        return result
+
+    def _authorized(self, report_id, access, version=None, edit=False):
+        require_module(access, edit)
+        payload = self.store.report(report_id, version)
+        if payload is None:
+            raise forbidden()
+        policy = ResourcePolicy.model_validate(payload['policy'])
+        authorize(policy, access, edit)
+        # Politique locale conservatrice : rapports privés à leur propriétaire.
+        if policy.owner_id != access.user_id:
+            raise forbidden()
+        # Réévaluer les droits des analyses à chaque lecture, sans remplacer l'instantané historique.
+        self._analyses(payload['request']['analysis_ids'], access)
+        for raw in payload['evidence']:
+            e = Evidence.model_validate(raw)
+            old = self.store.document(e.passage.document_id, e.passage.version)
+            current = self.store.document(e.passage.document_id)
+            if old is None or current is None:
+                raise forbidden()
+            authorize(DocumentRecord.model_validate(old).policy, access)
+            authorize(DocumentRecord.model_validate(current).policy, access)
+        return payload
+
+    def get_report(self, report_id, access_context, version=None):
+        payload = self._authorized(report_id, access_context, version)
+        result = ReportResult.model_validate(payload['result'])
+        if self.store.pdf(report_id, result.version):
+            result.download_path = f'/api/reports/{report_id}/pdf?version={result.version}'
+        return result
+
+    def list_reports(self, access_context):
+        require_module(access_context)
+        reports = []
+        for report_id in self.store.report_ids():
+            try:
+                reports.append(self.get_report(report_id, access_context))
+            except AppError as exc:
+                if exc.code != 'forbidden':
+                    raise
+        return reports
+
+    def revise_report(self, request, access_context):
+        payload = self._authorized(request.report_id, access_context, edit=True)
+        old = ReportResult.model_validate(payload['result'])
+        if request.base_version != old.version:
+            raise AppError('version_conflict', 'La version de base est obsolète. Rechargez le rapport.', 409)
+        if request.section_id not in {s.section_id for s in old.sections}:
+            raise AppError('invalid_request', 'Section absente du rapport.', 422)
+        style = revision_style(request.instruction)
+        original_request = ReportRequest.model_validate(payload['request'])
+        analyses = [AnalysisResult.model_validate(a) for a in payload['analyses']]
+        evidence = [Evidence.model_validate(e) for e in payload['evidence']]
+        styles = dict(payload['styles'])
+        styles[request.section_id] = style
+        affected = {request.section_id}
+        pending = [request.section_id]
+        while pending:
+            for dep in DEPENDENTS[pending.pop()]:
+                if dep not in affected:
+                    affected.add(dep)
+                    pending.append(dep)
+        result = old.model_copy(deep=True)
+        result.version += 1
+        result.request_id = request.request_id
+        result.download_path = None
+        result.sections = generate_sections(original_request, analyses, evidence, styles)
+        for section in result.sections:
+            if section.section_id in affected:
+                payload['section_versions'][section.section_id] = result.version
+        verify_report(result, original_request, analyses, evidence, styles)
+        payload['result'] = result.model_dump(mode='json')
+        payload['styles'] = styles
+        self.store.save_report(payload, base_version=old.version)
+        self.store.audit(access_context.user_id, request.request_id, 'report.revise', request.report_id)
+        return result
+
+    def export_pdf(self, report_id, access_context, exporter, version=None):
+        payload = self._authorized(report_id, access_context, version)
+        result = ReportResult.model_validate(payload['result'])
+        if not self.store.pdf(report_id, result.version):
+            pdf = exporter.render(payload)
+            self.store.save_pdf(report_id, result.version, pdf)
+        self.store.audit(access_context.user_id, result.request_id, 'report.export', report_id)
+        return self.get_report(report_id, access_context, result.version)
+
+    def download_pdf(self, report_id, access_context, version=None):
+        result = self.get_report(report_id, access_context, version)
+        pdf = self.store.pdf(report_id, result.version)
+        if pdf is None:
+            raise AppError('missing_data', 'PDF non généré. Lancez l’export.', 404)
+        self.store.audit(access_context.user_id, result.request_id, 'report.download', report_id)
+        return pdf

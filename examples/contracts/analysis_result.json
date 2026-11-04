@@ -1,0 +1,14 @@
+{
+  "request_id": "req_demo_compare", "analysis_id": "ana_demo_compare", "metric_id": "overnight_stays", "status": "ok",
+  "period": {"start": "2025-02-01", "end": "2025-02-28"},
+  "comparison_period": {"start": "2024-02-01", "end": "2024-02-29"},
+  "filters": {"destination": "Agadir"}, "unit": "nuitees",
+  "values": {"current": 80000, "previous": 100000, "change_pct": -20},
+  "series": [
+    {"date": "2024-02-01", "value": 100000, "kind": "observed", "lower": null, "upper": null},
+    {"date": "2025-02-01", "value": 80000, "kind": "observed", "lower": null, "upper": null}
+  ],
+  "formula": "Variation fournie par la fixture : (current - previous) / previous * 100. Aucun calcul réel QVD.",
+  "sources": [{"source_id": "src_demo_commercial", "source_type": "qvd", "name": "DEMO_Commercial.qvd", "version": "synthetic-v1", "fields": ["destination", "date", "overnight_stays"], "pages": []}],
+  "warnings": ["Données entièrement synthétiques, non issues de l’ONMT."], "is_synthetic": true
+}

@@ -1,0 +1,13 @@
+{
+  "request_id": "req_demo_forecast", "analysis_id": "ana_demo_forecast", "metric_id": "overnight_stays", "status": "partial",
+  "period": {"start": "2025-01-01", "end": "2025-02-28"}, "comparison_period": null,
+  "filters": {"destination": "Agadir"}, "unit": "nuitees", "values": {},
+  "series": [
+    {"date": "2025-02-01", "value": 80000, "kind": "observed", "lower": null, "upper": null},
+    {"date": "2025-03-01", "value": 85000, "kind": "forecast", "lower": 70000, "upper": 100000},
+    {"date": "2025-04-01", "value": null, "kind": "forecast", "lower": null, "upper": null}
+  ],
+  "formula": "Prévision fictive pour tester l’affichage ; aucun modèle statistique évalué.",
+  "sources": [{"source_id": "src_demo_forecast", "source_type": "qvd", "name": "DEMO_Forecast.qvd", "version": "synthetic-v1", "fields": ["date", "overnight_stays"], "pages": []}],
+  "warnings": ["Prévision synthétique ; avril indisponible ; intervalle illustratif non validé."], "is_synthetic": true
+}

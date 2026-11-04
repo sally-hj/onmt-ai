@@ -1,0 +1,4 @@
+{
+  "user_id": "salma-demo", "roles": ["report_editor", "document_editor"],
+  "allowed_modules": ["reports", "commercial"], "allowed_territories": ["Agadir"]
+}
