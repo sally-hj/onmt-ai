@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="{{ request.language }}" dir="{{ 'rtl' if rtl else 'ltr' }}">
+<head><meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'">
+<style>
+body { font: 11pt Arial, 'Segoe UI', sans-serif; color:#18352e; line-height:1.55; }
+h1 { font-size:27pt; line-height:1.2; } h2 { font-size:17pt; border-bottom:1px solid #acc7bd; padding-bottom:8px; }
+.cover { min-height:600px; page-break-after:always; padding-top:60px; }
+.tag { color:#60776c; letter-spacing:2px; } .warning { background:#fff1cf; padding:10px; }
+section { page-break-before:always; } pre { white-space:pre-wrap; font:inherit; overflow-wrap:anywhere; }
+table { border-collapse:collapse; width:100%; font-size:9pt; table-layout:fixed; }
+thead { display:table-header-group; } tr { break-inside:avoid; }
+td,th { border-bottom:1px solid #ccdcd6; padding:7px; text-align:start; overflow-wrap:anywhere; }
+.ref { font-size:9pt; overflow-wrap:anywhere; } svg { width:100%; height:auto; direction:ltr; }
+.plot { break-inside:avoid; margin-top:20px; }
+</style></head>
+<body>
+<div class="cover"><p class="tag">ONMT AI · PROTOTYPE</p><h1>{{ request.title }}</h1>
+<p>{{ t.audiences[request.audience] }}</p>
+<p>{{ report.report_id }} · v{{ report.version }}<br>{{ payload.created_at }}</p>
+{% if report.is_synthetic %}<p class="warning">{{ t.synthetic }}</p>{% endif %}
+<ol>{% for s in report.sections %}<li>{{ s.title }}</li>{% endfor %}</ol></div>
+{% for s in report.sections %}<section><h2>{{ s.title }}</h2><pre>{{ s.content }}</pre></section>{% endfor %}
+<section><h2>{{ t.observed }} / {{ t.forecast }}</h2>
+<table><thead><tr><th>{{ t.columns[0] }}</th><th>{{ t.columns[1] }}</th><th>Key</th><th>{{ t.columns[2] }}</th><th>{{ t.columns[3] }}</th></tr></thead>
+<tbody>{% for r in rows %}<tr><td dir="ltr">{{ r.analysis_id }} / {{ r.metric_id }}</td><td dir="ltr">{{ r.date }} / {{ r.kind }}</td><td dir="ltr">{{ r.key }}</td><td><bdi dir="{{ 'auto' if r.value is none else 'ltr' }}">{{ t.unavailable if r.value is none else r.value }}</bdi></td><td dir="ltr">{{ r.unit }}</td></tr>{% endfor %}</tbody></table>
+{% for plot in plots %}<div class="plot"><h3>{{ plot.title }} ({{ plot.unit }})</h3>
+<svg viewBox="0 0 720 210" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="{{ plot.title }}">
+<path d="M30 20V170H700" stroke="#6c867c" fill="none"/>
+{% for p in plot.points %}<circle cx="{{ p.x }}" cy="{{ p.y }}" r="4" fill="{{ '#b86c23' if p.kind == 'forecast' else '#176b54' }}"/>
+<text x="{{ p.x }}" y="{{ p.y - 10 }}" font-size="10" text-anchor="middle">{{ p.value }}</text>
+<text x="{{ p.x }}" y="{{ 190 + loop.index0 % 2 * 12 }}" font-size="9" text-anchor="middle">{{ p.date }}</text>{% endfor %}</svg>
+<p>{{ t.observed }}: <span style="color:#176b54">●</span> &nbsp; {{ t.forecast }}: <span style="color:#b86c23">●</span> ({{ t.hypothesis }})</p></div>{% endfor %}</section>
+<section><h2>{{ t.sources }}</h2>{% for s in report.sources %}<p class="ref">[{{ s.source_id }}] {{ s.name }} · {{ s.source_type }} · v{{ s.version }} · pages {{ s.pages|join(', ') }} · fields {{ s.fields|join(', ') }}</p>{% endfor %}
+{% for a in analyses %}<h3><bdi dir="ltr">{{ a.analysis_id }}</bdi></h3>
+<p>{{ t.scope }} : <bdi dir="ltr">{{ a.filters }}</bdi></p>
+<p><bdi dir="ltr">{{ a.period.start }} / {{ a.period.end }}</bdi>{% if a.comparison_period %} · <bdi dir="ltr">{{ a.comparison_period.start }} / {{ a.comparison_period.end }}</bdi>{% endif %}</p>
+<p>{{ t.formula }} : {{ a.formula }}</p>{% endfor %}
+<h2>{{ t.titles[5] }}</h2>{% for w in report.warnings %}<p class="warning">{{ w }}</p>{% endfor %}
+</section></body></html>

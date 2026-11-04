@@ -161,10 +161,12 @@ Le dépôt contient actuellement la structure initiale,
 les contrats proposés et la liste des dépendances.
 
 Les fichiers de code vides sont des emplacements à implémenter.
-L’application n’est pas encore exécutable.
+Le module de Salma est désormais exécutable localement : API, interface React,
+documents, index Chroma, rapports versionnés et PDF. Les modules de Hayat et Doha
+restent à connecter. Le mode démo utilise des analyses synthétiques explicites.
 
-Les commandes d’installation et de lancement seront ajoutées
-lorsque le backend et le frontend auront été initialisés et testés.
+Voir [docs/salma-reporting.md](docs/salma-reporting.md) pour les commandes PowerShell,
+les résultats des tests, les points d’intégration et les limites des modèles locaux.
 
 ## 11. Périmètre actuel
 

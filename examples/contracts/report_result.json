@@ -1,0 +1,6 @@
+{
+  "request_id": "req_example_result", "report_id": "rpt_example", "version": 1, "status": "completed",
+  "sections": [{"section_id": "summary", "title": "Résumé exécutif", "content": "Exemple de contrat synthétique : 80000 nuitees.", "source_ids": ["src_demo_commercial"]}],
+  "sources": [{"source_id": "src_demo_commercial", "source_type": "qvd", "name": "DEMO_Commercial.qvd", "version": "synthetic-v1", "fields": ["overnight_stays"], "pages": []}],
+  "download_path": null, "warnings": ["Exemple de forme uniquement ; données synthétiques."], "is_synthetic": true
+}

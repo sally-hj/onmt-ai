@@ -1,3 +1,49 @@
+# ==================================================
+# ONMT AI - Dépendances Python communes
+# Liste initiale : versions à figer après validation.
+# ==================================================
+
+# API et serveur local
 fastapi
-uvicorn
+uvicorn[standard]
+
+# Validation des contrats et configuration
 pydantic
+pydantic-settings
+
+# Requêtes HTTP et transfert de fichiers
+httpx
+python-multipart
+
+# IA conversationnelle et orchestration
+ollama
+langgraph
+
+# Lecture QVD et traitement des données
+pyqvd
+pandas
+numpy
+
+# Analyses statistiques et machine learning
+scikit-learn
+statsmodels
+
+# Embeddings et recherche documentaire
+sentence-transformers
+chromadb
+
+# Extraction du texte des PDF
+pdfplumber
+
+# Templates HTML et génération PDF
+jinja2
+playwright
+
+# Stockage applicatif PostgreSQL
+sqlalchemy
+psycopg[binary]
+alembic
+
+# Tests
+pytest
+pytest-asyncio
