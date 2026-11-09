@@ -1,6 +1,7 @@
 import hashlib
 import math
 import re
+from pathlib import Path
 from typing import Protocol
 
 from app.core.errors import AppError
@@ -16,14 +17,20 @@ class Embedder(Protocol):
 class LocalSentenceEmbedder:
     def __init__(self, model_path: str, revision: str):
         self.path, self.revision = model_path, revision
-        self.identity = f'sentence-transformers:{model_path}:{revision}:e5-prefix-v1'
+        revision_file = Path(model_path) / 'ONMT_REVISION.txt'
+        weights_revision = revision_file.read_text(encoding='ascii').strip() if revision_file.is_file() else 'operator-managed'
+        self.identity = f'sentence-transformers:{model_path}:{revision}:{weights_revision}:e5-prefix-v1'
         self._model = None
 
     def encode(self, texts, query=False):
         try:
             if self._model is None:
+                from app.core.runtime import prepare_torch_runtime
+                prepare_torch_runtime()
                 from sentence_transformers import SentenceTransformer
-                self._model = SentenceTransformer(self.path, local_files_only=True, trust_remote_code=False)
+                self._model = SentenceTransformer(self.path, local_files_only=True, trust_remote_code=False, device='cpu')
+                import torch
+                torch.set_num_threads(2)
             prefix = 'query: ' if query else 'passage: '
             inputs = [prefix + t for t in texts]
             # Aucun passage tronqué silencieusement : les références couvrent tout le texte indexé.
