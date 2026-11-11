@@ -1,3 +1,5 @@
+from typing import Literal
+
 from pydantic import Field
 
 from app.core.security import ResourcePolicy
@@ -19,6 +21,8 @@ class Passage(Contract):
     page_end: int
     text: str
     language: Language
+    extraction_method: Literal['text', 'ocr'] = 'text'
+    ocr_confidence: float | None = None
 
 
 class DocumentRecord(Contract):
@@ -29,6 +33,7 @@ class DocumentRecord(Contract):
     policy: ResourcePolicy
     passages: list[Passage]
     warnings: list[str]
+    processing_signature: str = 'text-v1'
 
 
 class Evidence(Contract):

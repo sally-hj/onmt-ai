@@ -10,12 +10,14 @@ import pdfplumber
 from app.core.errors import AppError, forbidden
 from app.core.security import authorize, can_read, private_policy, require_module
 from .documents import DocumentMetadata, DocumentRecord, Passage
+from .ocr import LocalOCR
 
 
 class DocumentService:
     def __init__(self, store, index, settings):
         self.store, self.index, self.settings = store, index, settings
         self.lock = RLock()
+        self.ocr = LocalOCR(settings)
 
     def reindex(self, access_context):
         require_module(access_context, True)
@@ -54,6 +56,7 @@ class DocumentService:
             previous = DocumentRecord.model_validate(previous)
             authorize(previous.policy, access, True)
         digest = hashlib.sha256(content).hexdigest()
+        signature = f'text-v2:ocr={self.settings.ocr_enabled}:langs={self.settings.ocr_languages}'
         for raw in self.store.documents():
             if raw['sha256'] == digest:
                 doc = DocumentRecord.model_validate(raw)
@@ -62,20 +65,37 @@ class DocumentService:
                     raise AppError('invalid_request', 'Contenu déjà importé sous un autre identifiant.', 409)
                 if doc.metadata != metadata:
                     raise AppError('invalid_request', 'Contenu identique : métadonnées différentes. Importez une nouvelle édition du PDF.', 409)
-                return doc, True
+                if doc.processing_signature == signature or (not self.settings.ocr_enabled and doc.processing_signature == 'text-v1'):
+                    return doc, True
+                previous, document_id = doc, doc.document_id
+                break
+        origins, confidences, warnings = {}, {}, []
         try:
             with pdfplumber.open(io.BytesIO(content)) as pdf:
                 if len(pdf.pages) > self.settings.max_pages:
                     raise AppError('invalid_request', 'PDF limité à 200 pages.', 422)
-                pages = [(i+1, (p.extract_text(layout=False) or '').replace('\x00', '')) for i,p in enumerate(pdf.pages)]
+                pages = []
+                for index, page in enumerate(pdf.pages):
+                    text = (page.extract_text(layout=False) or '').replace('\x00', '')
+                    scanned = not text.strip() or (bool(page.images) and len(re.sub(r'\W', '', text)) < 80)
+                    method, confidence = 'text', None
+                    if scanned and self.settings.ocr_enabled:
+                        text, confidence, page_warnings = self.ocr.extract_page(content, index)
+                        method = 'ocr'
+                        warnings.extend(f'{w}:page={index+1}' for w in page_warnings)
+                    origins[index+1], confidences[index+1] = method, confidence
+                    pages.append((index+1, text))
         except AppError:
             raise
         except Exception as exc:
             raise AppError('invalid_request', 'PDF illisible, chiffré ou endommagé.', 422) from exc
         empty = [i for i,t in pages if not t.strip()]
         if not pages or len(empty) == len(pages):
-            raise AppError('missing_data', 'PDF sans texte exploitable, probablement scanné. OCR non implémenté.', 422)
-        warnings = [f'ocr_not_available: pages sans texte {empty}'] if empty else []
+            message = ('PDF sans texte exploitable après OCR ; contrôle manuel nécessaire.' if self.settings.ocr_enabled
+                       else 'PDF sans texte exploitable, probablement scanné. OCR non implémenté dans ce mode désactivé.')
+            raise AppError('missing_data', message, 422)
+        if empty:
+            warnings.append(f'{"ocr_empty" if self.settings.ocr_enabled else "ocr_not_available"}: pages sans texte {empty}')
         # Retrait des lignes de bord répétées ; les paragraphes restent dans leur page physique.
         borders = Counter(line.strip() for _,t in pages for line in (t.splitlines()[:1] + t.splitlines()[-1:]))
         repeated = {line for line,count in borders.items() if len(pages) >= 3 and count >= max(3, len(pages)*0.7)}
@@ -97,14 +117,16 @@ class DocumentService:
                 if part:
                     passages.append(Passage(chunk_id=f'{doc_id}:v{version}:p{page_no}:c{len(passages)+1}',
                                             document_id=doc_id, version=version, page_start=page_no, page_end=page_no,
-                                            text=part, language=metadata.language))
+                                            text=part, language=metadata.language, extraction_method=origins[page_no],
+                                            ocr_confidence=confidences[page_no]))
                 if end == len(cleaned):
                     break
                 start = end - 60
         if not passages:
             raise AppError('missing_data', 'Aucun passage exploitable.', 422)
         doc = DocumentRecord(document_id=doc_id, version=version, sha256=digest, metadata=metadata,
-                             policy=previous.policy if previous else private_policy(access), passages=passages, warnings=warnings)
+                             policy=previous.policy if previous else private_policy(access), passages=passages,
+                             warnings=warnings, processing_signature=signature)
         try:
             self.index.add(doc)
             self.store.save_document(doc.model_dump(mode='json'), content)

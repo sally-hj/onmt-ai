@@ -118,6 +118,8 @@ class Retriever:
                 doc, passage = lookup[chunk_id]
                 evidence.append(Evidence(passage=passage, source=reference(doc, passage), distance=distance))
         warnings = [] if evidence else ['documentary_evidence_insufficient']
+        if any(e.passage.extraction_method == 'ocr' for e in evidence):
+            warnings.append('ocr_evidence_requires_human_review_numbers_unverified')
         if isinstance(self.index.embedder, DemoHashEmbedder):
             warnings.append('demo_embeddings_non_semantic')
         return EvidenceResult(evidence=evidence, warnings=warnings)
