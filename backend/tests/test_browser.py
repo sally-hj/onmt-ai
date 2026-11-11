@@ -31,7 +31,8 @@ def live_servers(tmp_path):
         pytest.fail('Exécutez npm ci dans frontend avant le test navigateur.')
     api_port, ui_port = free_port(), free_port()
     env = {**os.environ, 'PYTHONPATH':str(ROOT/'backend'), 'ONMT_DEMO':'1', 'ONMT_DEMO_EMBEDDINGS':'1',
-           'ONMT_DATA_DIR':str(tmp_path/'state'), 'ONMT_OLLAMA_MODEL':'', 'ONMT_API_TARGET':f'http://127.0.0.1:{api_port}'}
+           'ONMT_DATA_DIR':str(tmp_path/'state'), 'ONMT_OLLAMA_MODEL':'', 'ONMT_GENERATION_MODE':'template', 'ONMT_OCR':'0',
+           'ONMT_API_TARGET':f'http://127.0.0.1:{api_port}'}
     processes=[]
     with (tmp_path/'servers.log').open('w',encoding='utf-8') as log:
         try:
