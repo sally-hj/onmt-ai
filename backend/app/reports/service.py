@@ -6,7 +6,9 @@ from app.core.security import ResourcePolicy, authorize, private_policy, require
 from app.schemas.analysis import AnalysisResult
 from app.schemas.report import ReportRequest, ReportResult
 from .documents import DocumentRecord, Evidence
-from .generation import generate_sections, revision_style
+from .generation import generate_sections, generate_edited_sections
+from .revisions import parse_revision
+from .generation import facts
 from .validation import collect_sources, verify_report
 
 DEPENDENTS = {
@@ -18,8 +20,9 @@ DEPENDENTS = {
 
 
 class ReportService:
-    def __init__(self, store, provider, retriever, planner=None):
+    def __init__(self, store, provider, retriever, planner=None, writer=None):
         self.store, self.provider, self.retriever, self.planner = store, provider, retriever, planner
+        self.writer = writer
 
     def _analyses(self, ids, access):
         analyses = []
@@ -50,14 +53,28 @@ class ReportService:
         if any(a.is_synthetic for a in analyses):
             warnings.append('synthetic_data')
         report_id = 'rpt_' + uuid4().hex
+        narratives, sections = {}, []
+        if self.writer:
+            if len(facts(analyses)) > 8 or len(evidence) > 3:
+                warnings.append('ai_context_limited_full_analysis_table_in_pdf')
+            for section_id in request.sections:
+                section, manifest = self.writer.generate_section(request, section_id, analyses, evidence)
+                sections.append(section)
+                narratives[section_id] = manifest
+            warnings.append('ai_narrative_verified_tokens_human_review_required')
+        else:
+            sections = generate_sections(request, analyses, evidence, styles)
+            warnings.append('generation_mode_template_no_llm')
         result = ReportResult(request_id=request.request_id, report_id=report_id, version=1, status='completed',
-                              sections=generate_sections(request, analyses, evidence, styles),
+                              sections=sections,
                               sources=collect_sources(analyses, evidence), download_path=None,
                               warnings=sorted(set(warnings)), is_synthetic=any(a.is_synthetic for a in analyses))
-        verify_report(result, request, analyses, evidence, styles)
+        verify_report(result, request, analyses, evidence, styles, narratives)
         payload = {'result': result.model_dump(mode='json'), 'request': request.model_dump(mode='json'),
                    'policy': private_policy(access_context).model_dump(), 'analyses': [a.model_dump(mode='json') for a in analyses],
                    'evidence': [e.model_dump(mode='json') for e in evidence], 'styles': styles,
+                   'narratives': narratives, 'section_settings': {},
+                   'generation_mode': 'ollama' if self.writer else 'template',
                    'section_versions': {s.section_id: 1 for s in result.sections},
                    'created_at': datetime.now(timezone.utc).isoformat()}
         self.store.save_report(payload)
@@ -111,12 +128,17 @@ class ReportService:
             raise AppError('version_conflict', 'La version de base est obsolète. Rechargez le rapport.', 409)
         if request.section_id not in {s.section_id for s in old.sections}:
             raise AppError('invalid_request', 'Section absente du rapport.', 422)
-        style = revision_style(request.instruction)
+        operation = parse_revision(request.instruction)
         original_request = ReportRequest.model_validate(payload['request'])
         analyses = [AnalysisResult.model_validate(a) for a in payload['analyses']]
         evidence = [Evidence.model_validate(e) for e in payload['evidence']]
         styles = dict(payload['styles'])
-        styles[request.section_id] = style
+        if operation.get('style') in ['concise', 'detailed']:
+            styles[request.section_id] = operation['style']
+        if not self.writer and operation.get('style') == 'rephrase':
+            raise AppError('tool_failed', 'Reformulation libre indisponible en mode gabarits ; activez Ollama.', 503)
+        section_settings = payload.get('section_settings', {})
+        section_settings.setdefault(request.section_id, {}).update(operation)
         affected = {request.section_id}
         pending = [request.section_id]
         while pending:
@@ -128,13 +150,35 @@ class ReportService:
         result.version += 1
         result.request_id = request.request_id
         result.download_path = None
-        result.sections = generate_sections(original_request, analyses, evidence, styles)
+        narratives = payload.get('narratives', {})
+        if self.writer:
+            sections = []
+            for section in old.sections:
+                if section.section_id in affected:
+                    options = dict(section_settings.get(section.section_id, {}))
+                    options.setdefault('style', styles.get(section.section_id, 'detailed'))
+                    section, manifest = self.writer.generate_section(original_request, section.section_id, analyses, evidence, options)
+                    narratives[section.section_id] = manifest
+                sections.append(section)
+            result.sections = sections
+            result.warnings = [w for w in result.warnings if w not in ['generation_mode_template_no_llm', 'generation_mode_mixed']]
+            if len(narratives) != len(result.sections):
+                result.warnings.append('generation_mode_mixed')
+            if 'ai_narrative_verified_tokens_human_review_required' not in result.warnings:
+                result.warnings.append('ai_narrative_verified_tokens_human_review_required')
+            payload['generation_mode'] = 'ollama' if len(narratives) == len(result.sections) else 'mixed'
+        elif narratives:
+            raise AppError('tool_failed', 'Ce rapport contient de la prose IA ; Ollama est requis pour le modifier.', 503)
+        else:
+            result.sections = generate_edited_sections(original_request, analyses, evidence, styles, section_settings)
         for section in result.sections:
             if section.section_id in affected:
                 payload['section_versions'][section.section_id] = result.version
-        verify_report(result, original_request, analyses, evidence, styles)
+        verify_report(result, original_request, analyses, evidence, styles, narratives, section_settings)
         payload['result'] = result.model_dump(mode='json')
         payload['styles'] = styles
+        payload['narratives'] = narratives
+        payload['section_settings'] = section_settings
         self.store.save_report(payload, base_version=old.version)
         self.store.audit(access_context.user_id, request.request_id, 'report.revise', request.report_id)
         return result

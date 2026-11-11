@@ -1,5 +1,5 @@
 from app.core.errors import AppError
-from .generation import generate_sections
+from .generation import generate_edited_sections
 
 
 def collect_sources(analyses, evidence):
@@ -11,11 +11,17 @@ def collect_sources(analyses, evidence):
     return list(sources.values())
 
 
-def verify_report(result, request, analyses, evidence, styles):
+def verify_report(result, request, analyses, evidence, styles, narratives=None, section_settings=None):
     """La rédaction contrôlée est reconstruite depuis les valeurs typées pour bloquer toute altération."""
-    expected = generate_sections(request, analyses, evidence, styles)
-    if result.sections != expected:
-        raise AppError('tool_failed', 'Échec de vérification des valeurs, unités ou références.', 500)
+    expected = {s.section_id: s for s in generate_edited_sections(request, analyses, evidence, styles, section_settings)}
+    if len(result.sections) != len(request.sections) or {s.section_id for s in result.sections} != set(request.sections):
+        raise AppError('tool_failed', 'Liste des sections différente de la demande validée.', 500)
+    from .narrative import verify_narrative
+    for section in result.sections:
+        if narratives and section.section_id in narratives:
+            verify_narrative(result.model_copy(update={'sections': [section]}), request, analyses, evidence, narratives)
+        elif section != expected[section.section_id]:
+            raise AppError('tool_failed', 'Échec de vérification des valeurs, unités ou références.', 500)
     if any(a.is_synthetic for a in analyses) and not result.is_synthetic:
         raise AppError('tool_failed', 'Marquage synthétique perdu.', 500)
     ReportType = type(result)

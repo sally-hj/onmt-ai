@@ -12,6 +12,7 @@ from app.core.llm_client import OllamaPlanner
 from app.reports.adapters import SyntheticAnalysisProvider, UnconnectedAnalysisProvider
 from app.reports.export import PDFExporter
 from app.reports.ingestion import DocumentService
+from app.reports.narrative import NarrativeWriter
 from app.reports.retrieval import ChromaIndex, DemoHashEmbedder, LocalSentenceEmbedder, Retriever
 from app.reports.router import router
 from app.reports.service import ReportService
@@ -33,8 +34,8 @@ def create_app(settings=None, provider=None, access_resolver=None, embedder=None
     app.state.access_resolver = access_resolver
     app.state.retriever = retriever
     app.state.documents = DocumentService(store, index, settings)
-    app.state.reports = ReportService(store, provider, retriever,
-                                      OllamaPlanner(settings.ollama_model) if settings.ollama_model else None)
+    writer = NarrativeWriter(OllamaPlanner(settings.ollama_model, settings.ollama_timeout, settings.ollama_context)) if settings.uses_llm else None
+    app.state.reports = ReportService(store, provider, retriever, writer=writer)
     app.state.exporter = exporter or PDFExporter()
 
     @app.middleware('http')

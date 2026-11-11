@@ -149,3 +149,14 @@ def generate_sections(request, analyses, evidence, styles=None):
         sections.append(ReportSection(section_id=section_id, title=t['titles'][SECTION_IDS.index(section_id)],
                                       content='\n\n'.join(parts), source_ids=sorted(set(cited))))
     return sections
+
+
+def generate_edited_sections(request, analyses, evidence, styles=None, section_settings=None):
+    result = []
+    for section_id in request.sections:
+        options = (section_settings or {}).get(section_id, {})
+        target = request.model_copy(update={'sections': [section_id],
+                                           'language': options.get('language', request.language),
+                                           'audience': options.get('audience', request.audience)})
+        result.extend(generate_sections(target, analyses, evidence, styles))
+    return result
