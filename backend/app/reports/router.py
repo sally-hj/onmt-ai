@@ -37,7 +37,8 @@ class SearchRequest(Contract):
 def config(request: Request, access: Access):
     settings = request.app.state.settings
     return {'demo': settings.demo, 'demo_embeddings': settings.demo_embeddings,
-            'generation': 'synchronous', 'ollama_enabled': bool(settings.ollama_model)}
+            'generation': 'synchronous', 'ollama_enabled': settings.uses_llm,
+            'generation_mode': 'ollama' if settings.uses_llm else 'template', 'ocr_enabled': settings.ocr_enabled}
 
 
 @router.post('/reports', response_model=ReportResult, status_code=201)
