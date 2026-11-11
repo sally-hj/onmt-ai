@@ -13,7 +13,7 @@ class Settings:
     embedding_model: str = field(default_factory=lambda: os.getenv('ONMT_EMBEDDING_MODEL', str(ROOT / 'local_data' / 'models' / 'multilingual-e5-small')))
     embedding_revision: str = field(default_factory=lambda: os.getenv('ONMT_EMBEDDING_REVISION', 'local-v1'))
     demo_embeddings: bool = field(default_factory=lambda: os.getenv('ONMT_DEMO_EMBEDDINGS', '0') == '1')
-    max_distance: float = 0.35
+    max_distance: float = field(default_factory=lambda: float(os.getenv('ONMT_MAX_DISTANCE', '0.24')))
     ollama_model: str = field(default_factory=lambda: os.getenv('ONMT_OLLAMA_MODEL', ''))
     generation_mode: str = field(default_factory=lambda: os.getenv('ONMT_GENERATION_MODE', 'auto'))
     ollama_timeout: float = field(default_factory=lambda: float(os.getenv('ONMT_OLLAMA_TIMEOUT', '240')))
