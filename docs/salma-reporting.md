@@ -1,5 +1,7 @@
 # Module Salma : documents, RAG et rapports
 
+> **Évolution du 8 novembre 2026 :** le guide actuel est [salma-local-ai.md](salma-local-ai.md). Le présent document conserve le fonctionnement et le diagnostic initiaux du 4 novembre ; ses mentions « OCR absent », « Ollama non exécuté » et « DLL bloquée » décrivent cet état historique.
+
 État vérifié le 4 novembre 2026, sur `salma/reporting-rag`. Ce module est un prototype local exécutable. Il ne constitue pas une validation de conformité à tout le CPS.
 
 ## Ce qui a été examiné

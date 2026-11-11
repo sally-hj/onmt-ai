@@ -1,5 +1,7 @@
 # Résultats de vérification du module Salma
 
+> Bilan historique du 4 novembre. Les nouveaux essais de vrais modèles et OCR sont consignés dans [salma-local-ai-results.md](salma-local-ai-results.md).
+
 Exécution du 4 novembre 2026, Windows, branche `salma/reporting-rag`.
 
 | Vérification | Résultat constaté |

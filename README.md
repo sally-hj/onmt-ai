@@ -168,6 +168,10 @@ restent à connecter. Le mode démo utilise des analyses synthétiques explicite
 Voir [docs/salma-reporting.md](docs/salma-reporting.md) pour les commandes PowerShell,
 les résultats des tests, les points d’intégration et les limites des modèles locaux.
 
+La mise à jour des modèles locaux, de l’OCR et des révisions est décrite dans
+[docs/salma-local-ai.md](docs/salma-local-ai.md). Elle conserve les analyses synthétiques
+tant que le fournisseur réel de Doha n’est pas connecté.
+
 ## 11. Périmètre actuel
 
 Développement de l’application uniquement.
