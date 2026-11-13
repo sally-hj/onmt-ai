@@ -2,6 +2,12 @@
 
 Projet académique en cours de développement.
 
+**Application locale intégrée :** [démarrage et démonstration](docs/full-app/08-utilisation.md),
+[guide pédagogique](docs/full-app/README.md), [couverture CPS](docs/full-app/01-couverture-cps.md).
+Le parcours principal relie désormais des QVD synthétiques natifs, les calculs de Doha,
+la conversation de Hayat et les rapports de Salma. Les données sont fictives ; les limites
+et preuves d'exécution figurent dans le [bilan des tests](docs/full-app/09-resultats.md).
+
 L’objectif est de créer une application conversationnelle permettant
 d’interroger des données touristiques, de produire des analyses fiables
 et de générer des rapports sourcés pour aider à la décision.
@@ -157,13 +163,13 @@ L’intégration réelle devra être testée une fois les modules connectés.
 
 ## 10. État actuel et lancement
 
-Le dépôt contient actuellement la structure initiale,
-les contrats proposés et la liste des dépendances.
+L'application complète se lance avec `scripts/start-full-app.ps1`, Ollama dans un
+autre terminal et `npm run dev` dans `frontend`. Elle propose une connexion locale,
+un chat principal, des calculs QVD, des graphiques, des documents et des rapports PDF.
+Les comptes et les commandes exactes sont dans le guide de démarrage ci-dessus.
 
-Les fichiers de code vides sont des emplacements à implémenter.
-Le module de Salma est désormais exécutable localement : API, interface React,
-documents, index Chroma, rapports versionnés et PDF. Les modules de Hayat et Doha
-restent à connecter. Le mode démo utilise des analyses synthétiques explicites.
+Les commandes Salma ci-dessous décrivent le sous-module historique et son mode
+de démonstration à fixtures isolées. Elles ne remplacent pas le démarrage intégré.
 
 Voir [docs/salma-reporting.md](docs/salma-reporting.md) pour les commandes PowerShell,
 les résultats des tests, les points d’intégration et les limites des modèles locaux.

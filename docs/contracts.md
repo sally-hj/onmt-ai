@@ -3,6 +3,13 @@
 Version : 0.1
 Statut : proposition commune à valider par Hayat, Doha et Salma.
 
+Intégration locale du 11 novembre 2026 : les champs de ces contrats sont conservés.
+Le fournisseur `AnalysisProvider` de Salma est implémenté par `AnalyticsService`, avec
+des calculs sur QVD natifs. Les routes supplémentaires de session, catalogue,
+conversation et alertes sont décrites dans [le guide d'intégration](full-app/README.md).
+Une réponse analytique synthétique utilise maintenant les QVD générés dans le mode
+complet ; les anciens exemples JSON restent des fixtures de test explicites.
+
 ## 1. Responsabilités
 
 - Hayat : compréhension des questions, contexte, coordination et accès QVD.
