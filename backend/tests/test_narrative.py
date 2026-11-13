@@ -39,12 +39,20 @@ def test_narrative_injection_validation_and_real_values(application, request_bod
 
 
 @pytest.mark.parametrize('body', ['Un chiffre inventé : 999.', '{{F001}} et une valeur de trois.',
+                                '{{F001}} et une valeur de **x**.', '{{F001}} et la référence **y**.', '{{F001}} et la variation **z**.',
+                                '{{F001}} Le serveur affichera les données.',
                                   '{{F001}} [invented]', '{{F001}} {{F002}}', '{{F001}} {{F001}}',
                                   '{{F001}} grâce à une campagne.', '{{F001}} puis ８００００.',
                                   '{{F001}} puis ٨٠٠٠٠.', '{{F001}} est de X.'])
 def test_rejects_unbacked_numbers_references_and_causes(body):
     with pytest.raises(AppError):
         validate_draft(NarrativeDraft(body=body), {'F001': {'key': 'current'}})
+
+
+@pytest.mark.parametrize('claim',['La hausse prouve une augmentation du nombre de visiteurs.','الزيادة في الليالي تشير إلى زيادة عدد الزوار.'])
+def test_nights_do_not_establish_arrival_counts(claim):
+    with pytest.raises(AppError):
+        validate_draft(NarrativeDraft(body='{{F001}} '+claim),{'F001':{'key':'current','metric_id':'overnight_stays'}})
 
 
 def test_revisions_languages_audiences_and_no_new_calculation(application, request_body, access):

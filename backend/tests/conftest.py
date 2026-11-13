@@ -49,7 +49,7 @@ def request_body():
 
 @pytest.fixture
 def application(tmp_path):
-    return create_app(Settings(data_dir=tmp_path, demo=True, demo_embeddings=True, ollama_model='',
+    return create_app(Settings(full_app=False,data_dir=tmp_path, demo=True, demo_embeddings=True, ollama_model='',
                                generation_mode='template', ocr_enabled=False))
 
 

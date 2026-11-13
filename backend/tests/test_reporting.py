@@ -22,6 +22,19 @@ def revision(report, **kwargs):
     return ReportRevisionRequest(**raw)
 
 
+def test_pdf_inline_preview_retains_authorization(application,request_body,access):
+    report=application.state.reports.create_report(request_body,access)
+    application.state.store.save_pdf(report.report_id,report.version,b'%PDF-1.4 preview fixture')
+    with TestClient(application) as client:
+        path=f'/api/reports/{report.report_id}/pdf?version=1'
+        assert client.get(path).headers['content-disposition'].startswith('attachment;')
+        inline=client.get(path+'&inline=true')
+        assert inline.status_code==200 and inline.headers['content-disposition'].startswith('inline;')
+        assert inline.headers['cache-control']=='no-store'
+        application.state.access_resolver=lambda request: access.model_copy(update={'user_id':'other'})
+        assert client.get(path+'&inline=true').status_code==403
+
+
 def test_values_units_forecast_missing_and_synthetic(application, request_body, access):
     service = application.state.reports
     result = service.create_report(request_body, access)

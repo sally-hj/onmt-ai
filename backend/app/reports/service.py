@@ -34,7 +34,7 @@ class ReportService:
             analyses.append(a)
         return analyses
 
-    def create_report(self, request: ReportRequest, access_context) -> ReportResult:
+    def create_report(self, request: ReportRequest, access_context, *, report_id=None, base_version=None, section_settings=None) -> ReportResult:
         require_module(access_context, True)
         analyses = self._analyses(request.analysis_ids, access_context)
         found = self.retriever.search_evidence(request.title, access_context)
@@ -52,36 +52,49 @@ class ReportService:
                 warnings.append(f'analysis_{a.status}:{a.analysis_id}')
         if any(a.is_synthetic for a in analyses):
             warnings.append('synthetic_data')
-        report_id = 'rpt_' + uuid4().hex
+        report_id = report_id or 'rpt_' + uuid4().hex
+        section_settings = section_settings or {}
         narratives, sections = {}, []
         if self.writer:
             if len(facts(analyses)) > 8 or len(evidence) > 3:
                 warnings.append('ai_context_limited_full_analysis_table_in_pdf')
             for section_id in request.sections:
-                section, manifest = self.writer.generate_section(request, section_id, analyses, evidence)
+                section, manifest = self.writer.generate_section(request, section_id, analyses, evidence,section_settings.get(section_id))
                 sections.append(section)
                 narratives[section_id] = manifest
             warnings.append('ai_narrative_verified_tokens_human_review_required')
         else:
-            sections = generate_sections(request, analyses, evidence, styles)
+            sections = generate_edited_sections(request, analyses, evidence, styles,section_settings)
             warnings.append('generation_mode_template_no_llm')
-        result = ReportResult(request_id=request.request_id, report_id=report_id, version=1, status='completed',
+        result = ReportResult(request_id=request.request_id, report_id=report_id, version=(base_version or 0)+1, status='completed',
                               sections=sections,
                               sources=collect_sources(analyses, evidence), download_path=None,
                               warnings=sorted(set(warnings)), is_synthetic=any(a.is_synthetic for a in analyses))
-        verify_report(result, request, analyses, evidence, styles, narratives)
+        verify_report(result, request, analyses, evidence, styles, narratives,section_settings)
         payload = {'result': result.model_dump(mode='json'), 'request': request.model_dump(mode='json'),
                    'policy': private_policy(access_context).model_dump(), 'analyses': [a.model_dump(mode='json') for a in analyses],
                    'evidence': [e.model_dump(mode='json') for e in evidence], 'styles': styles,
-                   'narratives': narratives, 'section_settings': {},
+                   'narratives': narratives, 'section_settings': section_settings,
                    'generation_mode': 'ollama' if self.writer else 'template',
-                   'section_versions': {s.section_id: 1 for s in result.sections},
+                   'section_versions': {s.section_id: result.version for s in result.sections},
                    'created_at': datetime.now(timezone.utc).isoformat()}
-        self.store.save_report(payload)
+        self.store.save_report(payload,base_version=base_version)
         self.store.audit(access_context.user_id, request.request_id, 'report.create', report_id)
         return result
 
-    def _authorized(self, report_id, access, version=None, edit=False):
+    def recalculate_report(self, report_id, analysis_ids, base_version, access, title=None):
+        """Hayat a déjà fait calculer les nouveaux résultats par Doha ; aucune arithmétique ici."""
+        payload = self._authorized(report_id,access,edit=True,allow_stale=True)
+        if payload['result']['version'] != base_version:
+            raise AppError('version_conflict','Le rapport a changé avant son recalcul.',409)
+        request = ReportRequest.model_validate(payload['request']).model_copy(update={
+            'analysis_ids':analysis_ids,'request_id':uuid4().hex})
+        if title is not None:
+            request=request.model_copy(update={'title':title})
+        return self.create_report(request,access,report_id=report_id,base_version=base_version,
+                                  section_settings=payload.get('section_settings',{}))
+
+    def _authorized(self, report_id, access, version=None, edit=False, allow_stale=False):
         require_module(access, edit)
         payload = self.store.report(report_id, version)
         if payload is None:
@@ -92,7 +105,13 @@ class ReportService:
         if policy.owner_id != access.user_id:
             raise forbidden()
         # Réévaluer les droits des analyses à chaque lecture, sans remplacer l'instantané historique.
-        self._analyses(payload['request']['analysis_ids'], access)
+        try:
+            self._analyses(payload['request']['analysis_ids'], access)
+        except AppError as exc:
+            if not allow_stale or exc.code != 'stale_analysis' or not hasattr(self.provider,'authorize_snapshot'):
+                raise
+            for analysis_id in payload['request']['analysis_ids']:
+                self.provider.authorize_snapshot(analysis_id,access)
         for raw in payload['evidence']:
             e = Evidence.model_validate(raw)
             old = self.store.document(e.passage.document_id, e.passage.version)
@@ -117,7 +136,7 @@ class ReportService:
             try:
                 reports.append(self.get_report(report_id, access_context))
             except AppError as exc:
-                if exc.code != 'forbidden':
+                if exc.code not in ['forbidden','stale_analysis']:
                     raise
         return reports
 

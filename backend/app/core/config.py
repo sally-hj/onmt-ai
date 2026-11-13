@@ -8,6 +8,9 @@ os.environ.setdefault('PLAYWRIGHT_BROWSERS_PATH', str(ROOT / 'local_data' / 'bro
 
 @dataclass(frozen=True)
 class Settings:
+    full_app: bool = field(default_factory=lambda: os.getenv('ONMT_FULL_APP', '0') == '1')
+    sources_config: Path = field(default_factory=lambda: Path(os.getenv('ONMT_SOURCES_CONFIG',str(ROOT/'config/sources.synthetic.json'))))
+    qvd_root: Path = field(default_factory=lambda: Path(os.getenv('ONMT_QVD_ROOT',str(ROOT/'local_data/qvd-synthetic'))))
     data_dir: Path = field(default_factory=lambda: Path(os.getenv('ONMT_DATA_DIR', str(ROOT / 'local_data' / 'reporting'))))
     demo: bool = field(default_factory=lambda: os.getenv('ONMT_DEMO', '0') == '1')
     embedding_model: str = field(default_factory=lambda: os.getenv('ONMT_EMBEDDING_MODEL', str(ROOT / 'local_data' / 'models' / 'multilingual-e5-small')))

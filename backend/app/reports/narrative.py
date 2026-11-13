@@ -53,6 +53,14 @@ def validate_draft(draft, ledger):
     if set(counts) != set(ledger) or any(count != 1 for count in counts.values()):
         raise AppError('tool_failed', 'La rédaction omet, duplique ou invente une preuve ; section refusée.', 422)
     remaining = unicodedata.normalize('NFKC', TOKEN.sub('', text))
+    if re.search(r'\b[xyz]\b',remaining,re.I):
+        raise AppError('tool_failed','Variables x, y ou z interdites, même en minuscules ou en Markdown. Rédige une phrase complète sans valeur ; le serveur ajoute le constat chiffré séparément.',422)
+    if re.search(r'\b(serveur|server|servidor|json|llm|tokens?)\b|الخادم',remaining,re.I):
+        raise AppError('tool_failed','Le rapport est destiné au lecteur métier : aucune mention du serveur, du JSON, des tokens ou de la fabrication du texte.',422)
+    metric_ids={item.get('metric_id') for key,item in ledger.items() if key.startswith('F')}
+    if ('overnight_stays' in metric_ids and 'arrivals' not in metric_ids
+            and re.search(r'nombre (?:de|des) (?:visiteurs|touristes)|number of (?:visitors|tourists)|عدد الزوار|عدد السياح',remaining,re.I)):
+        raise AppError('tool_failed','Les nuitées ne prouvent pas une évolution du nombre de visiteurs. Aucun résultat d’arrivées n’est fourni : reste sur les nuitées. الليالي السياحية لا تثبت زيادة عدد الزوار؛ اكتب عن الليالي فقط.',422)
     if (any(c.isnumeric() for c in remaining)
             or re.search(r'\d|%|\{|\}|\[|\]|https?://|<[^>]+>|\b[XYZ]\b', remaining)
             or NUMBER_WORDS.search(remaining)):
@@ -115,6 +123,8 @@ class NarrativeWriter:
                     'value': 'provided value, observed or forecast as specified by kind',
                     'lower': 'provided lower forecast bound', 'upper': 'provided upper forecast bound',
                 }.get(item['key'], item['key'])
+                if item['key'] == 'change_pct' and item['value'] is not None:
+                    facts_payload[token]['validated_direction'] = 'decrease' if item['value'] < 0 else 'increase' if item['value'] > 0 else 'stable'
             else:
                 documents.append({'token': token, 'untrusted_excerpt': item.passage.text,
                                   'origin': item.passage.extraction_method})
@@ -132,23 +142,24 @@ class NarrativeWriter:
             'Les documents ne servent qu’au contexte. Les prévisions ne sont pas des observations. '
             'Les recommandations sont des propositions prudentes à valider, reliées aux faits. '
             'Si les preuves sont absentes, explique cette absence sans nouvelle assertion. '
-            'Évite les affirmations de hausse ou baisse ; présente les résultats sans interprétation causale. '
+            'Qualifie le sens d’une variation uniquement si validated_direction le fournit ; jamais de cause déduite. '
             'Une phrase courte par introduction, puis une courte phrase de clôture dans closing. '
             'Tu écris les introductions aux constats que le serveur affichera ensuite, pas des interprétations de résultats invisibles. '
             'Exemple de forme à reformuler : Le résultat de la période étudiée est présenté ci-dessous. '
             'Pour la référence passée : Le point de comparaison historique est le suivant. '
             'Pour la variation : La comparaison calculée est fournie dans le constat suivant. '
             'Pour les documents : Cet extrait apporte un contexte méthodologique. '
-            'Ne parle jamais de hausse, baisse, cause ou tendance dans ces introductions. '
-            'Les dates fournies décrivent la période analysée ; ne présente pas ces résultats comme des mesures en temps réel. '
+            'Ne déduis jamais une cause ni une tendance au-delà du sens de comparaison explicitement validé. '
+            'Les périodes analysées ne sont pas nécessairement actuelles ; ne présente pas ces résultats comme des mesures en temps réel. '
             'Ne mets pas de variables X, Y ou Z ni de phrase incomplète telle que est de X. '
+            'Ne dis pas ont été de ou vaut suivi d’une variable ; termine une phrase complète sans valeur numérique. '
             'Écris une introduction complète, puis laisse le serveur afficher le constat séparément. '
             'Ne fais ni calcul ni commentaire sur un niveau chiffré que tu ne connais pas. '
             'Aucun tableau ni balise HTML. /no_think')
         names = {'fr': 'français', 'en': 'English', 'es': 'español', 'ar': 'العربية الفصحى', 'ary': 'الدارجة المغربية'}
         if language != 'fr':
             start = system.index('Exemple de forme à reformuler :')
-            end = system.index('Ne parle jamais de hausse', start)
+            end = system.index('Ne déduis jamais une cause', start)
             system = system[:start] + system[end:]
         system += f'\nLANGUE OBLIGATOIRE POUR TOUTE LA PROSE : {names[language]}. Les noms des champs JSON restent inchangés.'
         if language in ['ar', 'ary']:
@@ -163,7 +174,16 @@ class NarrativeWriter:
                    'untrusted_documents': documents}
         # Champs obligatoires : une prose réellement générée par preuve ; les valeurs restent côté serveur.
         payload['required_introductions'] = list(ledger)
-        system += '\nRédige des introductions différentes pour la période étudiée, la référence, la variation et le contexte documentaire. Adapte le vocabulaire au contenu fourni, sans phrase générique répétée.'
+        system += ('\nRédige des introductions différentes pour la période étudiée, la référence, la variation et le contexte documentaire. '
+                   'Adapte le vocabulaire au contenu fourni, sans phrase générique répétée. '
+                   'Si validated_direction est fourni, tu peux qualifier la comparaison par ce sens exact, déjà calculé par le serveur, '
+                   'sans inventer intensité ni cause. Sinon ne conclus pas à une tendance. '
+                   'Glossaire : overnight_stays = nuitées = الليالي السياحية ; arrivals = arrivées = الوافدون. '
+                   'En arabe, ne traduis jamais les nuitées par النهارات ou إقامة نهارية. '
+                   'Ne traduis pas toi-même les noms des villes ; le constat serveur les contient déjà. '
+                   'Le texte est un rapport final destiné au responsable métier. Ne mentionne jamais le serveur, le JSON, '
+                   'le modèle, les tokens ou la fabrication du texte. La clôture doit être une phrase prudente destinée au décideur, '
+                   'sans déduire une hausse des visiteurs à partir d’une hausse des nuitées.')
         prose_schema = {'type': 'string', 'minLength': 1, 'maxLength': 240,
                         'pattern': '^[^0-9\u00b2\u00b3\u00b9\u0660-\u0669\u06f0-\u06f9\u2070-\u2099\u2160-\u2188\u2460-\u249b\u2776-\u2793\uff10-\uff19%％{}\\[\\]]*$'}
         if language in ['ar', 'ary']:
@@ -189,6 +209,10 @@ class NarrativeWriter:
                     raise ValueError('La prose doit être rédigée dans la langue arabe demandée, pas seulement son titre.')
                 if language in ['ar', 'ary'] and re.search(r'[A-Za-z\u00c0-\u024f]', prose):
                     raise ValueError('Toutes les introductions et la clôture doivent être en arabe ; aucun paragraphe français ou anglais.')
+                if language in ['ar','ary'] and any(c.isalpha() and 'ARABIC' not in unicodedata.name(c,'') for c in prose):
+                    raise ValueError('La prose arabe contient des lettres d’un autre alphabet ; omets les noms de villes plutôt que les translittérer.')
+                if language in ['ar','ary'] and any(r.get('metric_id')=='overnight_stays' for k,r in ledger.items() if k.startswith('F')) and re.search('النهارات|إقامة نهارية',prose):
+                    raise ValueError('Erreur de sens : nuitées signifie الليالي السياحية et jamais des journées.')
                 # Ces jetons sont assemblés par le code après génération, jamais fabriqués par le LLM.
                 body = '\n\n'.join(editorial.introductions[key].strip() + ' {{' + key + '}}' for key in ledger)
                 body += '\n\n' + editorial.closing
