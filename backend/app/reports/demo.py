@@ -7,7 +7,8 @@ from app.schemas.report import ReportRequest, ReportRevisionRequest
 
 def main():
     output = ROOT / 'local_data' / 'demo-reporting'
-    app = create_app(Settings(data_dir=output, demo=True, demo_embeddings=True, ollama_model=''))
+    app = create_app(Settings(data_dir=output, demo=True, demo_embeddings=True, ollama_model='',
+                              generation_mode='template', ocr_enabled=False))
     request = ReportRequest.model_validate_json((ROOT / 'examples/contracts/report_request.json').read_text(encoding='utf-8'))
     service = app.state.reports
     report = service.create_report(request, demo_access())

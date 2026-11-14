@@ -17,6 +17,7 @@ export function ReportsPage() {
   const [error, setError] = useState('');
   const [editSection, setEditSection] = useState<SectionId>('summary');
   const [instruction, setInstruction] = useState('résumer');
+  const [customInstruction, setCustomInstruction] = useState('');
   const [docFile, setDocFile] = useState<File>();
   const [docTitle, setDocTitle] = useState('');
   const [docId, setDocId] = useState('');
@@ -65,6 +66,7 @@ export function ReportsPage() {
     <main><header><span className="eyebrow">RECHERCHE & RAPPORTS</span><span className="pill">Espace Salma</span></header>
       <h1>Les données prennent<br/><em>la parole.</em></h1><p className="intro">Créez un rapport traçable à partir des analyses autorisées, enrichi par vos documents.</p>
       {config?.demo && <div className="demo">Démonstration explicite · utilisateur simulé · données synthétiques{config.demo_embeddings && ' · recherche lexicale de démonstration'}</div>}
+      {config && <p className="muted">{config.ollama_enabled ? 'Rédaction par un modèle IA local — chiffres et citations contrôlés ; relecture humaine requise.' : 'Rédaction par gabarits — aucun modèle de rédaction IA utilisé.'}</p>}
       {error && <div role="alert" className="error">{error}</div>}
       {busy && <div role="status" className="progress"><span className="spinner"/>{busy} La requête reste ouverte pendant le traitement.</div>}
       <div className="columns"><form className="panel request-panel" onSubmit={create}><div className="panel-number">01 / COMPOSER</div><h2>Nouveau rapport</h2>
@@ -83,9 +85,9 @@ export function ReportsPage() {
           {!!report.warnings.length && <details open><summary>Avertissements ({report.warnings.length})</summary><ul>{report.warnings.map(w=><li key={w}>{w}</li>)}</ul></details>}
           <div className="reading" dir="auto">{report.sections.map(s=><article key={s.section_id}><h3>{s.title}</h3><p className="content">{s.content}</p></article>)}</div>
           <details><summary>Sources utilisées ({report.sources.length})</summary>{report.sources.map(s=><p className="source" key={s.source_id}><strong>{s.name}</strong> · {s.source_type} · v{s.version}<br/>{s.source_id} · pages {s.pages.join(', ') || '—'} · champs {s.fields.join(', ') || '—'}</p>)}</details>
-          <form className="edit-form" onSubmit={e=>{e.preventDefault(); void run('Modification et vérification des sections dépendantes…',async()=>selectReport(await api.revise({request_id:crypto.randomUUID(),report_id:report.report_id,base_version:report.version,section_id:editSection,instruction})));}}>
+          <form className="edit-form" onSubmit={e=>{e.preventDefault(); void run('Modification et vérification des sections dépendantes…',async()=>selectReport(await api.revise({request_id:crypto.randomUUID(),report_id:report.report_id,base_version:report.version,section_id:editSection,instruction:instruction==='modifier' ? `modifier:${customInstruction}` : instruction})));}}>
             <fieldset disabled={!!busy}><h3>Modifier une section</h3><label>Section<select value={editSection} onChange={e=>setEditSection(e.target.value as SectionId)}>{report.sections.map(s=><option key={s.section_id} value={s.section_id}>{s.title}</option>)}</select></label>
-              <label>Modification<select value={instruction} onChange={e=>setInstruction(e.target.value)}><option value="résumer">Résumer</option><option value="détailler">Détailler</option></select></label><p className="muted">Un nouveau périmètre nécessite une nouvelle analyse.</p><button type="submit">Enregistrer une nouvelle version</button>
+              <label>Modification<select value={instruction} onChange={e=>setInstruction(e.target.value)}><option value="résumer">Résumer</option><option value="détailler">Détailler</option><option value="reformuler" disabled={!config?.ollama_enabled}>Reformuler avec l’IA locale</option><option value="langue:fr">Traduire en français</option><option value="langue:ar">Traduire en arabe</option><option value="langue:ary">Traduire en darija</option><option value="langue:en">Traduire en anglais</option><option value="langue:es">Traduire en espagnol</option><option value="adapter:direction">Adapter à la direction</option><option value="adapter:ministere">Adapter au ministère</option><option value="adapter:regional">Adapter au public régional</option><option value="modifier" disabled={!config?.ollama_enabled}>Consigne éditoriale ciblée</option></select></label>{instruction==='modifier' && <label>Consigne éditoriale<input required maxLength={1500} value={customInstruction} onChange={e=>setCustomInstruction(e.target.value)} placeholder="Exemple : rendre les explications plus pédagogiques"/></label>}<p className="muted">La modification concerne la section sélectionnée. Les chiffres et les preuves sont conservés. Un nouveau périmètre nécessite une nouvelle analyse.</p><button type="submit">Enregistrer une nouvelle version</button>
             </fieldset></form>
           <div className="actions"><button disabled={!!busy} onClick={()=>void run('Préparation du PDF…', async()=>selectReport(await api.export(report.report_id,report.version)))}>Préparer le PDF</button>
             {report.download_path && <button disabled={!!busy} onClick={()=>void run('Téléchargement…',()=>api.download(report.download_path!))}>Télécharger le PDF</button>}
@@ -93,12 +95,12 @@ export function ReportsPage() {
           </div>
         </>}
       </div></div>
-      <section className="panel documents"><div className="panel-number">03 / DOCUMENTATION</div><h2>Enrichir le contexte</h2><p className="muted">PDF textuels autorisés uniquement · 20 Mio maximum · OCR non disponible.</p>
+      <section className="panel documents"><div className="panel-number">03 / DOCUMENTATION</div><h2>Enrichir le contexte</h2><p className="muted">PDF autorisés · 20 Mio maximum · {config?.ocr_enabled ? 'OCR local activé pour les pages scannées ; transcription et chiffres à relire.' : 'OCR désactivé : seuls les textes extractibles sont utilisés.'}</p>
         <div className="columns"><form onSubmit={e=>{e.preventDefault(); if(docFile) void run('Extraction des pages et indexation locale…',async()=>{const value=await api.upload(docFile,docTitle,language,docId); setDocId(value.document.document_id); setDocNotice(`${value.duplicate?'Doublon déjà indexé':'Document indexé'} : ${value.document.document_id}, v${value.document.version}. ${value.document.warnings.join(' ')}`);});}}>
           <fieldset disabled={!!busy || !config}><label>Fichier PDF<input type="file" accept="application/pdf" required onChange={e=>setDocFile(e.target.files?.[0])}/></label><label>Titre du document<input required value={docTitle} onChange={e=>setDocTitle(e.target.value)}/></label><label>Identifiant à mettre à jour (facultatif)<input value={docId} onChange={e=>setDocId(e.target.value)}/></label><p className="muted">Langue du document : {language}. Les droits proviennent du contexte serveur.</p><button type="submit">Importer le PDF autorisé</button></fieldset>{docNotice && <p role="status">{docNotice}</p>}
         </form>
         <form onSubmit={e=>{e.preventDefault();void run('Recherche des passages autorisés…',async()=>setEvidence(await api.search(question)));}}><fieldset disabled={!!busy || !config}><label>Rechercher une preuve<input required value={question} onChange={e=>setQuestion(e.target.value)}/></label><button type="submit">Rechercher</button></fieldset>
-          {evidence && <div>{!evidence.evidence.length && <p>Aucune preuve suffisante.</p>}{evidence.warnings.map(w=><p className="muted" key={w}>{w}</p>)}{evidence.evidence.map(e=><blockquote key={e.passage.chunk_id}><p>{e.passage.text}</p><cite>{e.source.name} · v{e.source.version} · p. {e.source.pages.join(', ')} · {e.passage.chunk_id}</cite></blockquote>)}</div>}
+          {evidence && <div>{!evidence.evidence.length && <p>Aucune preuve suffisante.</p>}{evidence.warnings.map(w=><p className="muted" key={w}>{w}</p>)}{evidence.evidence.map(e=><blockquote key={e.passage.chunk_id}><p>{e.passage.text}</p><cite>{e.source.name} · v{e.source.version} · p. {e.source.pages.join(', ')} · {e.passage.chunk_id}{e.passage.extraction_method==='ocr' && ' · OCR, transcription à vérifier'}</cite></blockquote>)}</div>}
         </form></div>
       </section><footer>ONMT AI · Prototype de recherche documentaire et de reporting · Sources contrôlées côté serveur</footer>
     </main>

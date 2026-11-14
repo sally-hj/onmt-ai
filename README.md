@@ -2,6 +2,20 @@
 
 Projet académique en cours de développement.
 
+**Décision du professeur, 14 novembre 2026 : les QVD synthétiques sont les données
+de référence définitives du projet pédagogique.** Aucun dataset réel n'est attendu
+pour finaliser le rendu. Configurer d'autres QVD reste une extension facultative.
+Cet accord porte sur les données ; il ne dispense pas des fonctions encore manquantes.
+
+**Application locale intégrée :** [démarrage et démonstration](docs/full-app/08-utilisation.md),
+[guide pédagogique](docs/full-app/README.md), [couverture CPS](docs/full-app/01-couverture-cps.md).
+Le parcours principal relie désormais des QVD synthétiques natifs, les calculs de Doha,
+la conversation de Hayat et les rapports de Salma. Les données sont fictives ; les limites
+et preuves d'exécution figurent dans le [bilan des tests](docs/full-app/09-resultats.md).
+La [matrice actualisée](docs/full-app/01-couverture-cps.md) distingue acquis pédagogiques,
+fonctions à terminer et exigences industrielles. Le [reste à développer](docs/full-app/10-perimetre-pedagogique.md)
+conserve les écarts fonctionnels, indépendamment du choix des données.
+
 L’objectif est de créer une application conversationnelle permettant
 d’interroger des données touristiques, de produire des analyses fiables
 et de générer des rapports sourcés pour aider à la décision.
@@ -39,7 +53,7 @@ et les tests associés à son module.
 - Python
 - FastAPI
 - Pydantic
-- PostgreSQL et SQLAlchemy
+- SQLite pour l'état applicatif local, sans recopier les tables QVD
 
 ### Conversation et orchestration
 
@@ -49,9 +63,8 @@ et les tests associés à son module.
 ### Données et analyses
 
 - PyQvd
-- pandas et NumPy
-- scikit-learn
-- statsmodels
+- Agrégations et prévisions de référence en Python
+- NumPy et bibliothèques de modèles pour les composants qui les utilisent
 
 ### Recherche documentaire et rapports
 
@@ -71,8 +84,10 @@ et les tests associés à son module.
 - pytest
 - pytest-asyncio
 
-Les dépendances Python sont déclarées dans backend/requirements.txt.
-Les versions exactes seront figées après validation de l’environnement.
+Les dépendances intégrées sont fixées dans `backend/requirements-full.txt` ;
+`backend/requirements-full-tested.lock.txt` décrit l'environnement validé.
+`backend/requirements.txt` conserve la proposition initiale : certains outils listés
+(PostgreSQL, pandas, statsmodels) ne sont pas utilisés par l'application actuelle.
 
 ## 4. Organisation du dépôt
 
@@ -123,6 +138,7 @@ concernées et accompagnée d’une mise à jour des exemples et des tests.
 - hayat/conversation : travail de Hayat.
 - doha/analytics : travail de Doha.
 - salma/reporting-rag : travail de Salma.
+- feature/full-onmt-app : intégration locale des trois modules.
 
 Les branches individuelles sont créées après la fusion de la base commune.
 
@@ -140,7 +156,10 @@ Ne pas ajouter au dépôt :
 - Les fichiers .env.
 - Les modèles téléchargés et les index locaux.
 
-Utiliser des données synthétiques pour les exemples partagés.
+Utiliser les données synthétiques comme référence définitive du projet pédagogique.
+Le [dictionnaire](docs/full-app/03-donnees.md) décrit la génération et les relations.
+L'[oracle manuel](examples/synthetic-reference.json) contient les résultats attendus
+indépendants du moteur de calcul.
 
 Les résultats fictifs doivent être explicitement identifiés.
 Une donnée absente ne doit jamais être remplacée par une invention.
@@ -153,24 +172,34 @@ les contrats communs.
 Lorsque les autres modules ne sont pas encore disponibles,
 utiliser des adaptateurs de test et des résultats synthétiques.
 
-L’intégration réelle devra être testée une fois les modules connectés.
+Les trois modules sont intégrés sur les QVD synthétiques natifs. Les preuves d'exécution
+des calculs et modèles locaux sont distinguées des tests à clients simulés.
 
 ## 10. État actuel et lancement
 
-Le dépôt contient actuellement la structure initiale,
-les contrats proposés et la liste des dépendances.
+L'application complète se lance avec `scripts/start-full-app.ps1`, Ollama dans un
+autre terminal et `npm run dev` dans `frontend`. Elle propose une connexion locale,
+un chat principal, des calculs QVD, des graphiques, des documents et des rapports PDF.
+Les comptes et les commandes exactes sont dans le guide de démarrage ci-dessus.
 
-Les fichiers de code vides sont des emplacements à implémenter.
-Le module de Salma est désormais exécutable localement : API, interface React,
-documents, index Chroma, rapports versionnés et PDF. Les modules de Hayat et Doha
-restent à connecter. Le mode démo utilise des analyses synthétiques explicites.
+Les commandes Salma ci-dessous décrivent le sous-module historique et son mode
+de démonstration à fixtures isolées. Elles ne remplacent pas le démarrage intégré.
 
 Voir [docs/salma-reporting.md](docs/salma-reporting.md) pour les commandes PowerShell,
 les résultats des tests, les points d’intégration et les limites des modèles locaux.
 
+La mise à jour des modèles locaux, de l’OCR et des révisions est décrite dans
+[docs/salma-local-ai.md](docs/salma-local-ai.md). Ce guide historique précède l'intégration :
+le fournisseur de Doha calcule maintenant depuis les QVD synthétiques de référence,
+qui ne doivent pas être remplacés avant le rendu.
+
 ## 11. Périmètre actuel
 
 Développement de l’application uniquement.
+
+Le volet données est conforme au choix pédagogique confirmé. La couverture fonctionnelle
+reste partielle : les KPI supplémentaires, fonctions analytiques avancées, longues
+conversations et rapports élaborés restent à développer ou explicitement arbitrer.
 
 Les choix de déploiement seront définis séparément selon
 les consignes du professeur.

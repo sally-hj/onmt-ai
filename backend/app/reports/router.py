@@ -71,9 +71,9 @@ def export(report_id: str, request: Request, access: Access, version: int | None
 
 
 @router.get('/reports/{report_id}/pdf')
-def download(report_id: str, request: Request, access: Access, version: int | None = Query(default=None, gt=0)):
+def download(report_id: str, request: Request, access: Access, version: int | None = Query(default=None, gt=0), inline: bool = False):
     pdf = request.app.state.reports.download_pdf(report_id, access, version)
-    return Response(pdf, media_type='application/pdf', headers={'Content-Disposition': 'attachment; filename="rapport.pdf"',
+    return Response(pdf, media_type='application/pdf', headers={'Content-Disposition': ('inline' if inline else 'attachment') + '; filename="rapport.pdf"',
                                                                'Cache-Control': 'no-store'})
 
 

@@ -30,8 +30,9 @@ def live_servers(tmp_path):
     if not (frontend/'node_modules/vite/bin/vite.js').is_file():
         pytest.fail('Exécutez npm ci dans frontend avant le test navigateur.')
     api_port, ui_port = free_port(), free_port()
-    env = {**os.environ, 'PYTHONPATH':str(ROOT/'backend'), 'ONMT_DEMO':'1', 'ONMT_DEMO_EMBEDDINGS':'1',
-           'ONMT_DATA_DIR':str(tmp_path/'state'), 'ONMT_OLLAMA_MODEL':'', 'ONMT_API_TARGET':f'http://127.0.0.1:{api_port}'}
+    env = {**os.environ, 'PYTHONPATH':str(ROOT/'backend'), 'ONMT_FULL_APP':'0','ONMT_DEMO':'1', 'ONMT_DEMO_EMBEDDINGS':'1',
+           'ONMT_DATA_DIR':str(tmp_path/'state'), 'ONMT_OLLAMA_MODEL':'', 'ONMT_GENERATION_MODE':'template', 'ONMT_OCR':'0',
+           'ONMT_API_TARGET':f'http://127.0.0.1:{api_port}'}
     processes=[]
     with (tmp_path/'servers.log').open('w',encoding='utf-8') as log:
         try:
@@ -70,7 +71,7 @@ def test_real_ui_api_report_revision_document_and_pdf(live_servers):
             page=browser.new_page(viewport={'width':1440,'height':1000},accept_downloads=True)
             failures=[]
             page.on('pageerror',lambda error:failures.append(str(error)))
-            page.goto(live_servers)
+            page.goto(live_servers+'/?legacy=1')
             expect(page.get_by_text('Démonstration explicite',exact=False)).to_be_visible()
             page.get_by_role('button',name='Générer le rapport').click()
             expect(page.get_by_text('Rapport · version 1')).to_be_visible(timeout=30000)

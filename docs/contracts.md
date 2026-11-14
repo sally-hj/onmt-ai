@@ -1,7 +1,19 @@
 # ONMT AI - Contrats d’échange
 
 Version : 0.1
+
+Périmètre de données confirmé le 14 novembre 2026 : les QVD synthétiques sont la référence
+définitive du rendu pédagogique. Leur emploi n'implique pas des traitements simulés.
+Les résultats et exports conservent `is_synthetic: true` et un marquage visible ;
+la configuration d'autres QVD demeure facultative. Aucun champ de contrat n'est supprimé.
 Statut : proposition commune à valider par Hayat, Doha et Salma.
+
+Intégration locale du 11 novembre 2026 : les champs de ces contrats sont conservés.
+Le fournisseur `AnalysisProvider` de Salma est implémenté par `AnalyticsService`, avec
+des calculs sur QVD natifs. Les routes supplémentaires de session, catalogue,
+conversation et alertes sont décrites dans [le guide d'intégration](full-app/README.md).
+Une réponse analytique synthétique utilise maintenant les QVD générés dans le mode
+complet ; les anciens exemples JSON restent des fixtures de test explicites.
 
 ## 1. Responsabilités
 

@@ -10,5 +10,5 @@ export interface ReportRevisionRequest { request_id: string; report_id: string; 
 export interface ReportSection { section_id: SectionId; title: string; content: string; source_ids: string[] }
 export interface ReportResult { request_id: string; report_id: string; version: number; status: 'pending' | 'running' | 'completed' | 'failed'; sections: ReportSection[]; sources: SourceReference[]; download_path: string | null; warnings: string[]; is_synthetic: boolean }
 export interface ErrorResponse { request_id: string; code: string; message: string }
-export interface AppConfig { demo: boolean; demo_embeddings: boolean; generation: 'synchronous'; ollama_enabled: boolean }
-export interface EvidenceResult { evidence: {passage: {chunk_id: string; document_id: string; version: number; page_start: number; page_end: number; text: string; language: Language}; source: SourceReference; distance: number}[]; warnings: string[] }
+export interface AppConfig { demo: boolean; demo_embeddings: boolean; generation: 'synchronous'; ollama_enabled: boolean; generation_mode?: 'ollama'|'template'; ocr_enabled?: boolean }
+export interface EvidenceResult { evidence: {passage: {chunk_id: string; document_id: string; version: number; page_start: number; page_end: number; text: string; language: Language; extraction_method?: 'text'|'ocr'; ocr_confidence?: number|null}; source: SourceReference; distance: number}[]; warnings: string[] }

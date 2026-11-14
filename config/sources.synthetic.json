@@ -1,0 +1,10 @@
+{
+  "label": "Corpus synthétique de référence pédagogique ONMT AI — aucune donnée officielle",
+  "synthetic": true,
+  "sources": [
+    {"id":"commercial", "file":"commercial.qvd", "module":"commercial", "grain":["month","destination","market"], "fields":{"key":"record_key","month":"period","destination":"destination","market":"market","overnight_stays":"nights","arrivals":"arrivals","seats":"seats","bookings":"bookings"}, "units":{"overnight_stays":"nuitees","arrivals":"arrivees","seats":"sieges","bookings":"reservations"}},
+    {"id":"finance", "file":"finance.qvd", "module":"finance", "grain":["month","destination","market"], "fields":{"key":"record_key","month":"period","destination":"destination","market":"market","budget":"budget_mad","spent":"spent_mad","committed":"committed_mad"}, "units":{"budget":"MAD","spent":"MAD","committed":"MAD"}},
+    {"id":"performance", "file":"performance.qvd", "module":"performance", "grain":["month","destination","market"], "fields":{"key":"record_key","month":"period","destination":"destination","market":"market","room_revenue":"room_revenue_mad","rooms_sold":"room_nights_sold","rooms_available":"room_nights_available","travel_receipts":"travel_receipts_mad","impressions":"impressions","clicks":"clicks"}, "units":{"room_revenue":"MAD","rooms_sold":"chambres-nuits","rooms_available":"chambres-nuits","travel_receipts":"MAD","impressions":"impressions","clicks":"clics"}}
+  ],
+  "relations":[{"left":"commercial","right":"finance","keys":["month","destination","market"],"cardinality":"one_to_one"},{"left":"commercial","right":"performance","keys":["month","destination","market"],"cardinality":"one_to_one"}]
+}

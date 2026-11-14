@@ -1,5 +1,9 @@
 # Résultats de vérification du module Salma
 
+> **Actualisation du 14 novembre 2026 :** ces résultats sont historiques. Les trois modules ont depuis été intégrés sur des QVD synthétiques natifs, devenus la référence définitive du projet. Aucun dataset réel n'est une condition de rendu. Les tests réels et simulés restent distingués dans le [bilan actuel](full-app/09-resultats.md).
+
+> Bilan historique du 4 novembre. Les nouveaux essais de vrais modèles et OCR sont consignés dans [salma-local-ai-results.md](salma-local-ai-results.md).
+
 Exécution du 4 novembre 2026, Windows, branche `salma/reporting-rag`.
 
 | Vérification | Résultat constaté |

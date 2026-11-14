@@ -38,9 +38,43 @@ def create_app(settings=None, provider=None, access_resolver=None, embedder=None
     app.state.reports = ReportService(store, provider, retriever, writer=writer)
     app.state.exporter = exporter or PDFExporter()
 
+    if settings.full_app:
+        import os
+        os.environ['LANGSMITH_TRACING'] = 'false'
+        os.environ['LANGCHAIN_TRACING_V2'] = 'false'
+        from app.analytics.service import AnalyticsService
+        from app.analytics.anomalies import AlertService
+        from app.analytics.router import router as analytics_router
+        from app.conversation.intent import IntentParser
+        from app.conversation.service import ConversationService
+        from app.conversation.router import router as conversation_router
+        from app.core.auth import LocalAuth, router as auth_router
+        from app.core.state import AppState
+        from app.data_access.catalog import Catalog
+        state = AppState(settings.data_dir)
+        auth = LocalAuth(state)
+        auth.bootstrap()
+        catalog = Catalog(settings.sources_config,settings.qvd_root)
+        analytics = AnalyticsService(catalog,state)
+        app.state.application_state,app.state.auth,app.state.catalog = state,auth,catalog
+        app.state.analytics = analytics
+        app.state.alerts = AlertService(catalog,state)
+        app.state.access_resolver = access_resolver or auth.resolve
+        app.state.reports.provider = analytics
+        parser = IntentParser(OllamaPlanner(settings.ollama_model,settings.ollama_timeout,settings.ollama_context))
+        app.state.conversations = ConversationService(state,analytics,app.state.reports,app.state.exporter,parser)
+        app.include_router(auth_router)
+        app.include_router(analytics_router)
+        app.include_router(conversation_router)
+
     @app.middleware('http')
     async def request_context(request: Request, call_next):
         request.state.request_id = uuid4().hex
+        if settings.full_app and request.method in ['POST','PATCH','PUT','DELETE']:
+            origin = request.headers.get('origin')
+            # Session locale : bloquer les écritures provenant d'un site tiers.
+            if origin and origin != str(request.base_url).rstrip('/') and origin not in ['http://127.0.0.1:5173','http://localhost:5173','http://127.0.0.1:8000','http://localhost:8000']:
+                return JSONResponse(status_code=403,content={'request_id':request.state.request_id,'code':'forbidden','message':'Origine non autorisée.'})
         response = await call_next(request)
         response.headers['X-Request-ID'] = request.state.request_id
         response.headers['Cache-Control'] = 'no-store'

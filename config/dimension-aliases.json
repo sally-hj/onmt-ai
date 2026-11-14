@@ -1,0 +1,17 @@
+{
+  "destination": {
+    "Agadir": ["Agadir", "أكادير", "اكادير"],
+    "Marrakech": ["Marrakech", "مراكش"],
+    "Fès": ["Fès", "Fes", "Fez", "فاس"],
+    "Tanger": ["Tanger", "Tangier", "طنجة"],
+    "Rabat": ["Rabat", "الرباط"],
+    "Casablanca": ["Casablanca", "الدار البيضاء", "كازا"]
+  },
+  "market": {
+    "France": ["France", "Francia", "فرنسا", "marché français", "French market"],
+    "Espagne": ["Espagne", "Spain", "España", "إسبانيا", "اسبانيا"],
+    "Allemagne": ["Allemagne", "Germany", "Alemania", "ألمانيا", "المانيا"],
+    "Royaume-Uni": ["Royaume-Uni", "United Kingdom", "Reino Unido", "المملكة المتحدة"],
+    "Maroc": ["Maroc", "Morocco", "Marruecos", "المغرب"]
+  }
+}

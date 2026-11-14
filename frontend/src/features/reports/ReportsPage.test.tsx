@@ -13,6 +13,21 @@ beforeEach(()=>{vi.resetAllMocks();vi.mocked(api.config).mockResolvedValue({demo
 afterEach(cleanup);
 
 describe('Rapports — tests interface avec API simulée',()=>{
+  it('transmet une traduction ciblée et affiche le mode OCR et IA réels',async()=>{
+    vi.mocked(api.config).mockResolvedValue({demo:true,demo_embeddings:false,generation:'synchronous',ollama_enabled:true,ocr_enabled:true,generation_mode:'ollama'});
+    vi.mocked(api.create).mockResolvedValue(report);
+    vi.mocked(api.revise).mockResolvedValue({...report,version:2});
+    render(<ReportsPage/>);
+    await waitFor(()=>expect(screen.getByRole('button',{name:/Générer le rapport/})).toBeEnabled());
+    expect(screen.getByText(/Rédaction par un modèle IA local/)).toBeInTheDocument();
+    expect(screen.getByText(/OCR local activé pour les pages scannées/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button',{name:/Générer le rapport/}));
+    await screen.findByText('Rapport · version 1');
+    fireEvent.change(screen.getByLabelText('Modification'),{target:{value:'langue:ar'}});
+    fireEvent.click(screen.getByRole('button',{name:'Enregistrer une nouvelle version'}));
+    await screen.findByText('Rapport · version 2');
+    expect(vi.mocked(api.revise).mock.calls[0][0]).toMatchObject({instruction:'langue:ar',section_id:'summary',base_version:1});
+  });
   it('affiche attente, rapport, marquage synthétique, révision et téléchargement',async()=>{
     let finish!: (value:ReportResult)=>void;
     vi.mocked(api.create).mockReturnValue(new Promise(resolve=>{finish=resolve;}));

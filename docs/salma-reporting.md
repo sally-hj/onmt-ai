@@ -1,5 +1,9 @@
 # Module Salma : documents, RAG et rapports
 
+> **Périmètre actuel, 14 novembre 2026 :** les QVD synthétiques sont la référence définitive du rendu ; aucun dataset réel n'est attendu. Ce document conserve l'état historique du module Salma. Ses anciennes attentes d'intégration/données ne sont plus des conditions de finalisation. Voir la [matrice actuelle](full-app/01-couverture-cps.md) et le [reste fonctionnel](full-app/10-perimetre-pedagogique.md).
+
+> **Évolution du 8 novembre 2026 :** le guide actuel est [salma-local-ai.md](salma-local-ai.md). Le présent document conserve le fonctionnement et le diagnostic initiaux du 4 novembre ; ses mentions « OCR absent », « Ollama non exécuté » et « DLL bloquée » décrivent cet état historique.
+
 État vérifié le 4 novembre 2026, sur `salma/reporting-rag`. Ce module est un prototype local exécutable. Il ne constitue pas une validation de conformité à tout le CPS.
 
 ## Ce qui a été examiné
