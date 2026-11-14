@@ -1,5 +1,7 @@
 # Salma — modèles locaux, OCR et révisions
 
+> **Référence actuelle, 14 novembre 2026 :** les QVD synthétiques sont définitifs pour le projet pédagogique. Les anciennes attentes de fichiers ou de modules « réels » ci-dessous décrivent l'état du 9 novembre ; l'intégration actuelle calcule depuis les QVD synthétiques. Aucune réception de données externes n'est nécessaire au rendu. Voir le [périmètre confirmé et le reste fonctionnel](full-app/10-perimetre-pedagogique.md). Les procédures d'outils locaux demeurent utiles.
+
 Mise à jour du 9 novembre 2026 ; diagnostic commencé le 8 novembre. Ce guide complète et remplace les limites d’environnement du bilan initial du 4 novembre. Développement local uniquement ; aucun push, fusion, Docker ou déploiement ajouté.
 
 ## Diagnostic et choix

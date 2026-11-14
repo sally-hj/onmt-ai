@@ -210,6 +210,8 @@ def test_real_pdf_text_readability_tables_and_history(application, request_body,
         assert '80000' in text and 'nuitees' in text and 'DEMO_Commercial.qvd' in text
         assert 'Agadir' in text
         assert '85000' in text
+        assert result.is_synthetic is True
+        if language == 'fr': assert 'DONNÉES SYNTHÉTIQUES' in text
         if language == 'ar': assert sum('\u0600' <= c <= '\u06ff' for c in text) > 100
     revised = service.revise_report(revision(result),access)
     assert revised.download_path is None

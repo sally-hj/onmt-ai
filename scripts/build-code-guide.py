@@ -14,7 +14,7 @@ ROLES={
  'core/llm_client.py':('Appelle Ollama localhost avec schéma JSON, vérifie le modèle local et gère délais, erreurs et sorties tronquées.','generate_json(schema,system,payload) rend le texte JSON réel du modèle ou lève AppError.'),
  'core/state.py':('Persiste l’état applicatif local dans SQLite : analyses calculées, conversations versionnées, alertes, comptes et sessions. Ne copie pas les tables QVD.','save_conversation(cid,owner,payload,base) refuse une version de base obsolète.'),
  'core/auth.py':('Gère comptes locaux, mots de passe scrypt, cookie opaque, expiration, limitation des connexions et routes login/me/logout.','resolve(request) transforme le cookie vérifié en AccessContext serveur.'),
- 'data_access/synthetic.py':('Crée le corpus mensuel fictif, l’écrit en QVD, relit toutes les cellules et écrit manifeste/références/jeux défectueux.','generate(Path("local_data/qvd-synthetic")) produit trois domaines, chacun de 2 100 lignes.'),
+ 'data_access/synthetic.py':('Crée le corpus pédagogique définitif, l’écrit en QVD, relit toutes les cellules et écrit manifeste versionné/empreintes/références/jeux défectueux.','generate(Path("local_data/qvd-synthetic")) produit trois domaines, chacun de 2 100 lignes ; semantic_digest identifie les cellules indépendamment des métadonnées QVD.'),
  'data_access/qvd_reader.py':('Borne les chemins, vérifie les autorisations, lit nativement PyQvd, découvre les types et normalise les dates mensuelles.','read(source,access,{"destination":"Agadir"}) retourne lignes autorisées, empreinte et types.'),
  'data_access/catalog.py':('Charge les mappings, valide le grain, contrôle les lignes, décrit les sources et vérifie les associations.','read_authorized_data("commercial",fields,filters,access) retourne des colonnes logiques et une version de source.'),
  'analytics/quality.py':('Recherche les erreurs de qualité avant les sommes : doublons, dates, valeurs, unités et capacité.','inspect_rows(rows,source) renvoie une liste de codes ; une liste non vide bloque l’analyse.'),
@@ -50,6 +50,7 @@ ROLES={
 }
 
 HELP={
+ 'semantic_digest':'Entrée : table décodée avec colonnes et cellules. Résultat : SHA-256 du JSON canonique, indépendant des horodatages du conteneur QVD ; vérifie la reproductibilité des données.',
  'source_formula':'Entrée : mapping des sources. Résultat : description de formule utilisant les colonnes réellement lues, avec qualification des domaines pour un rapprochement.',
  'benchmark':'Entrées : demande analytique, accès, dimension de regroupement et valeurs facultatives. Résultat : une analyse autorisée par destination/marché, sans jointure multiplicative.',
  'describe':'Entrée : accès serveur. Résultat : catalogue des sources visibles, types, périodes, unités, erreurs et relations contrôlées.',

@@ -1,4 +1,4 @@
-"""Jeu mensuel fictif reproductible, écrit en format QVD binaire natif avec PyQvd."""
+"""Corpus pédagogique synthétique de référence, reproductible en QVD natif avec PyQvd."""
 import argparse
 import calendar
 import hashlib
@@ -12,6 +12,14 @@ from pyqvd import QvdTable
 DESTINATIONS = ['Agadir', 'Marrakech', 'Fès', 'Tanger', 'Rabat', 'Casablanca']
 MARKETS = ['France', 'Espagne', 'Allemagne', 'Royaume-Uni', 'Maroc']
 SHARES = [.32, .20, .18, .20, .10]
+GENERATOR_VERSION = 'onmt-synthetic-v1'
+REFERENCE_SEED = 20261111
+
+
+def semantic_digest(table):
+    """Empreinte des colonnes et cellules décodées, indépendante de l'horodatage QVD."""
+    encoded = json.dumps(table, ensure_ascii=False, sort_keys=True, separators=(',', ':'), allow_nan=False)
+    return hashlib.sha256(encoded.encode('utf-8')).hexdigest()
 
 
 def write_qvd(path, rows):
@@ -22,7 +30,7 @@ def write_qvd(path, rows):
         raise RuntimeError('Échec de relecture QVD : ' + path.name)
 
 
-def generate(directory: Path, seed=20261111):
+def generate(directory: Path, seed=REFERENCE_SEED):
     directory.mkdir(parents=True, exist_ok=True)
     rng = random.Random(seed)
     tables = {'commercial': [], 'finance': [], 'performance': []}
@@ -49,12 +57,17 @@ def generate(directory: Path, seed=20261111):
                     tables['performance'].append({**base,'room_revenue_mad': rooms*(620+index*25),'room_nights_sold': rooms,
                         'room_nights_available': available,'travel_receipts_mad': nights*(740+index*30),
                         'impressions': round(spent*4.5),'clicks': round(spent*.12)})
-    manifest = {'synthetic': True,'seed': seed,'period': {'start':'2021-01-01','end':'2026-10-31'},
+    manifest = {'schema_version':2,'generator_version':GENERATOR_VERSION,
+                'reference_status':'pedagogical_final' if seed==REFERENCE_SEED else 'pedagogical_variant',
+                'synthetic': True,'seed': seed,'period': {'start':'2021-01-01','end':'2026-10-31'},
                 'grain': ['month','destination','market'],'destinations':DESTINATIONS,'markets':MARKETS,'files':[]}
     for name, rows in tables.items():
         path = directory/f'{name}.qvd'
         write_qvd(path, rows)
-        manifest['files'].append({'id':name,'file':path.name,'rows':len(rows),'sha256':hashlib.sha256(path.read_bytes()).hexdigest()})
+        decoded = QvdTable.from_qvd(path).to_dict()
+        manifest['files'].append({'id':name,'file':path.name,'rows':len(rows),'columns':decoded['columns'],
+                                 'sha256':hashlib.sha256(path.read_bytes()).hexdigest(),
+                                 'semantic_sha256':semantic_digest(decoded)})
     # Jeux défectueux séparés : aucun n'est chargé par la configuration normale.
     bad = directory/'invalid'; bad.mkdir(exist_ok=True)
     rows = [dict(r) for r in tables['commercial'][:5]]
@@ -72,7 +85,7 @@ def generate(directory: Path, seed=20261111):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', type=Path, default=Path('local_data/qvd-synthetic'))
-    parser.add_argument('--seed',type=int,default=20261111)
+    parser.add_argument('--seed',type=int,default=REFERENCE_SEED)
     args = parser.parse_args()
     result = generate(args.output, args.seed)
     print('Données SYNTHÉTIQUES :', sum(f['rows'] for f in result['files']), 'lignes ; relecture QVD vérifiée.')

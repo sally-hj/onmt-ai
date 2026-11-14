@@ -11,7 +11,7 @@ class Metric:
     fields: dict[str, list[str]]
     formula: str
     kind: str = 'sum'
-    limit: str = 'Définition du jeu de développement à confirmer sur les sources réelles.'
+    limit: str = 'Définition pédagogique du corpus synthétique de référence ; aucune représentativité statistique ONMT revendiquée.'
 
     def source_formula(self, sources):
         """Décrit les colonnes réellement lues, même après un changement de mapping."""

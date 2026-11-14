@@ -176,9 +176,9 @@ Borne les chemins, vérifie les autorisations, lit nativement PyQvd, découvre l
 
 ## `backend/app/data_access/synthetic.py`
 
-Crée le corpus mensuel fictif, l’écrit en QVD, relit toutes les cellules et écrit manifeste/références/jeux défectueux.
+Crée le corpus pédagogique définitif, l’écrit en QVD, relit toutes les cellules et écrit manifeste versionné/empreintes/références/jeux défectueux.
 
-**Exemple :** generate(Path("local_data/qvd-synthetic")) produit trois domaines, chacun de 2 100 lignes.
+**Exemple :** generate(Path("local_data/qvd-synthetic")) produit trois domaines, chacun de 2 100 lignes ; semantic_digest identifie les cellules indépendamment des métadonnées QVD.
 
 **Utilise :** `pyqvd`
 
@@ -186,5 +186,6 @@ Crée le corpus mensuel fictif, l’écrit en QVD, relit toutes les cellules et 
 
 | Fonction / paramètres | Résultat et rôle |
 | --- | --- |
+| `semantic_digest(table)` | Entrée : table décodée avec colonnes et cellules. Résultat : SHA-256 du JSON canonique, indépendant des horodatages du conteneur QVD ; vérifie la reproductibilité des données. |
 | `write_qvd(path, rows)` | Entrées : chemin de sortie et lignes. Écrit un vrai QVD et compare sa relecture cellule par cellule ; erreur en cas de différence. |
-| `generate(directory: Path, seed=20261111)` | Entrées : dossier de sortie et graine fixe. Résultat : manifeste après écriture et relecture native des QVD. |
+| `generate(directory: Path, seed=REFERENCE_SEED)` | Entrées : dossier de sortie et graine fixe. Résultat : manifeste après écriture et relecture native des QVD. |

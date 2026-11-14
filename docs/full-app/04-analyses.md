@@ -2,6 +2,8 @@
 
 Le catalogue contient seize indicateurs définis dans `analytics/metrics.py`. Un indicateur décrit son identifiant, son libellé, son unité, les champs nécessaires, sa formule et ses limites. `metric_catalog()` n'expose que ceux autorisés par les modules du compte.
 
+Ces définitions s'appliquent au corpus pédagogique définitif. Leur validation ne dépend pas de fichiers réels ; le test `test_synthetic_reference.py` contrôle les seize calculs sur l'oracle manuel versionné. L'objectif des KPI supplémentaires et des autres analyses du CPS reste dans le [reste à développer](10-perimetre-pedagogique.md).
+
 ## Noyau disponible
 
 Sommes : nuitées, arrivées, sièges, réservations, budget, dépenses, engagements, recettes voyages et revenus des chambres.
@@ -36,7 +38,7 @@ L'actualisation est déclenchée par le bouton Sources/Alertes ou `/api/sources/
 
 ## Ajouter un indicateur
 
-1. Définir la formule, l'unité, le grain et les cas non calculables avec le métier.
+1. Définir et documenter la convention pédagogique : formule, unité, grain et cas non calculables. Une validation sur un patrimoine réel n'est pas un prérequis du projet.
 2. Vérifier les champs logiques disponibles dans le mapping et leurs unités canoniques dans le contrôle de `AnalyticsService._read()` si de nouveaux champs sont ajoutés.
 3. Ajouter une instance `Metric` dans `METRICS`. Les agrégations supportées sont somme, ratio et pourcentage ; une formule différente nécessite une fonction testée dans `calculate()`.
 4. Ajouter un test avec une réponse attendue calculée indépendamment du moteur.

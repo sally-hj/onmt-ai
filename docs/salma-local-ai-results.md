@@ -1,5 +1,7 @@
 # Résultats des essais locaux — 9 novembre 2026
 
+> **Actualisation du 14 novembre 2026 :** ce bilan conserve les essais du 9 novembre, avant l'intégration des trois modules. Les QVD synthétiques sont désormais les données définitives du rendu ; aucun dataset réel n'est attendu. Consulter le [bilan actuel](full-app/09-resultats.md) et la [matrice réévaluée](full-app/01-couverture-cps.md) pour les fonctions restantes.
+
 Ollama, E5 et Tesseract ont réellement été exécutés sur ce PC Windows. Les documents et les analyses utilisés sont entièrement fictifs. Ces résultats ne constituent pas une recette des modules réels de Doha et Hayat, ni une conformité globale au CPS.
 
 ## Contrôles exécutés

@@ -1,5 +1,7 @@
 # Explication des changements : vrais modèles locaux et OCR
 
+> **Cadre pédagogique confirmé le 14 novembre 2026 :** les données synthétiques sont la référence définitive. Les traitements locaux sont exécutés réellement ; les doubles de test sont identifiés séparément. Ce guide décrit l'évolution historique Salma ; l'[inventaire intégré](full-app/fichiers/README.md) et le [reste fonctionnel](full-app/10-perimetre-pedagogique.md) décrivent l'état actuel.
+
 La partie déjà existante gérait les contrats, les droits, les rapports par gabarits et le PDF. Cette évolution ajoute les modèles réellement exécutés et l’OCR, sans remplacer les analyses de Doha ni l’authentification de Hayat.
 
 Le parcours est : PDF → extraction directe ou OCR → passages référencés → vecteurs E5 → recherche autorisée → prose Ollama → injection et contrôle des faits → version SQLite → PDF.

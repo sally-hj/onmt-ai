@@ -2,6 +2,8 @@
 
 Les responsables de l'ONMT disposent de données dans Qlik mais une question nouvelle peut demander une intervention BI. L'application propose une autre porte d'entrée : poser une question, vérifier un résultat et ses sources, puis rédiger une synthèse dans le même espace.
 
+Pour le rendu pédagogique, les QVD synthétiques sont les données de référence définitives, conformément à la décision du professeur du 14 novembre 2026. Ce ne sont pas des fichiers provisoires en attente d'un dataset réel. Le connecteur, les calculs, l'OCR, les embeddings et l'inférence restent des traitements à exécuter réellement ; seuls les doubles de tests explicitement identifiés sont simulés.
+
 Imagine une petite équipe. Hayat est la réception : elle comprend la demande et appelle le bon service. Doha est la calculatrice et le contrôleur : elle lit les données, vérifie leur cohérence et calcule. Salma est la documentaliste et la rédactrice : elle retrouve les preuves, assemble un rapport, conserve ses versions et prépare son PDF. Aucune de ces fonctions ne donne au modèle le droit d'exécuter du code libre.
 
 ```mermaid

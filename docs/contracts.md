@@ -1,6 +1,11 @@
 # ONMT AI - Contrats d’échange
 
 Version : 0.1
+
+Périmètre de données confirmé le 14 novembre 2026 : les QVD synthétiques sont la référence
+définitive du rendu pédagogique. Leur emploi n'implique pas des traitements simulés.
+Les résultats et exports conservent `is_synthetic: true` et un marquage visible ;
+la configuration d'autres QVD demeure facultative. Aucun champ de contrat n'est supprimé.
 Statut : proposition commune à valider par Hayat, Doha et Salma.
 
 Intégration locale du 11 novembre 2026 : les champs de ces contrats sont conservés.

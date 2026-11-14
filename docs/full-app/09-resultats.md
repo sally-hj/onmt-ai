@@ -2,6 +2,23 @@
 
 Travaux commencés le 11 novembre 2026, clôture vérifiée le 13 novembre. Branche dédiée : `feature/full-onmt-app`, issue du dernier état Salma `4245369`. Les branches distantes ont été consultées sans être modifiées. Aucun déploiement, Docker, CI/CD, push ou fusion n'est ajouté.
 
+**Actualisation du périmètre, 14 novembre 2026 :** les QVD synthétiques sont désormais les données de référence définitives confirmées par le professeur. Leur remplacement par un patrimoine réel n'est plus une condition de rendu. Les résultats datés ci-dessous restent des preuves d'exécution, pas une validation de toutes les exigences fonctionnelles. La nouvelle [matrice](01-couverture-cps.md) et le [reste à développer](10-perimetre-pedagogique.md) séparent ces sujets.
+
+## Audit du corpus définitif — 14 novembre 2026
+
+- Les trois fichiers déjà présents sous `local_data/qvd-synthetic/` ont été lus avec PyQvd et comparés aux données d'une génération neuve à graine `20261111` : **2 100 lignes identiques par domaine, 6 300 au total**. Les originaux n'ont pas été réécrits. Le compte rendu local est `local_data/pedagogical-audit/verification.json`.
+- `test_synthetic_reference.py` : **20 passed en 3,87 s** lors du dernier contrôle. Vérifie format natif, clés/grains des trois domaines, invariants, références imposées, deux générations de même graine, effet d'une autre graine, unités et seize calculs sur l'oracle manuel indépendant. Une clé Finance absente bloque le rapprochement avec Commercial.
+- Régression backend finale : **111 passed, 10 deselected en 31,21 s**, hors modèles et navigateur opt-in. Les nombres du bilan d'intégration du 13 novembre plus bas sont conservés comme résultats historiques, pas comme compteur actuel.
+- Tests ciblés corpus + rapports : **54 passed en 18,55 s**, dont le marqueur « DONNÉES SYNTHÉTIQUES » extrait d'un vrai PDF français produit avec Chromium ; le drapeau synthétique est aussi vérifié en arabe. Le parcours de rédaction de ces tests utilise explicitement les gabarits, pas un appel LLM simulé présenté comme réel.
+- OCR multilingue et recherche E5 : **2 passed, 1 deselected en 88,03 s**. Tesseract et E5 sont réellement exécutés sur les PDF et questions synthétiques ; le long scénario de rédaction est exclu de cette commande.
+- Le manifeste enrichi porte schéma v2, version du générateur, statut de référence, colonnes, empreinte binaire et empreinte sémantique. Une graine différente est une variante explicitement marquée, pas une substitution silencieuse de référence.
+
+L'oracle `examples/synthetic-reference.json` contient des entrées et attendus calculés à la main ; il n'est produit ni par le générateur ni par les fonctions analytiques testées. Le fichier `expected.json` généré n'est donc plus la seule source d'attendus. Les tests ci-dessus se recouvrent : ne pas additionner leurs comptes comme des tests distincts.
+
+Les analyses et rapports déjà enregistrés conservent leurs avertissements historiques, comme les anciennes pages de documentation désormais contextualisées. Un nouveau calcul utilise la définition pédagogique actualisée ; il n'est pas nécessaire d'attendre ni de remplacer les QVD. Les instantanés de versions précédentes ne sont pas réécrits pour modifier rétroactivement leur contenu.
+
+Les appels réels Ollama et le parcours complet restent attestés par les essais datés du 13 novembre ci-dessous ; ils n'ont pas été relancés pour ce changement de statut des données. L'audit du 14 novembre ne transforme pas les clients simulés des tests ordinaires en preuves d'inférence réelle.
+
 ## Fonctionnement réalisé
 
 - Trois QVD synthétiques natifs, 6 300 lignes au total : historique mensuel 2021–octobre 2026, six destinations et cinq marchés. Chaque fichier est relu et comparé cellule par cellule après sa création.
@@ -63,7 +80,8 @@ La prose arabe reste moins fiable. Une clôture déduisait une hausse des visite
 | --- | --- |
 | Opérationnel et vérifié sur corpus synthétique | Lecture native, contrôles de grain, calculs du noyau, filtres/droits locaux, contexte et relance de référence, documents/OCR, recherche, rapports versionnés et PDF, alertes à l'actualisation, interface intégrée. |
 | Partiel | Découverte de schéma avec mapping/relations configurés ; compréhension multilingue et ancrage hybride ; prose analytique courte, qualité arabe ; prévisions simples ; benchmarks internes ; sécurité et audit applicatifs locaux. |
-| Non couvert ou à valider | Patrimoine et définitions réels, ensemble des 30+ KPI du CPS, BCG/Butler, benchmarks étrangers et sources OMT/WTTC, création libre de KPI, monitoring 24/7, équipe d'agents autonomes spécialisés, voix/streaming, deck de 25 slides et charte officielle, SSO, chiffrement/audit immuable, SLA et infrastructure souveraine de production. |
+| Fonctions restant à développer ou à valider | Catalogue au-delà des 16 KPI, BCG/Butler et comparateurs synthétiques étrangers, KPI via chat, agents spécialisés, conversations longues, rapports/itérations avancés, deck, voix/streaming, sécurité et audit applicatifs. Leur absence ne devient pas une dispense liée aux données. |
+| Cible industrielle distincte | QVD de production non requis pour ce rendu ; compatibilité future facultative. Datacenter/GPU industriels, PRA, déploiement et SLA d'exploitation hors livraison locale ; SSO d'entreprise non fourni. Les adaptations pédagogiques de sécurité restent à expliciter. |
 
 Le modèle CPU Qwen2.5 3B et ce PC 16 Go ne sont pas assimilés à l'infrastructure GPU du CPS. Les durées observées se comptent en minutes pour un rapport ; aucune conformité au délai industriel n'est revendiquée.
 
@@ -75,10 +93,10 @@ Le PDF `rapport-ar-controle-semantique.pdf` correspond au contrôle arabe renfor
 
 La [procédure de lancement et les commandes de test](08-utilisation.md) permettent de reproduire les essais. Lire le [guide pédagogique](README.md), puis l'[inventaire des fichiers](fichiers/README.md). La [matrice détaillée du CPS](01-couverture-cps.md) conserve la distinction entre exigences explicites, choix étudiants et limites.
 
-## Commits locaux
+## Commits d'intégration du 13 novembre
 
 - `5d1dedd` — modules QVD, analyses, conversation, accès locaux, contrôles et tests.
 - `aadfbdb` — interface conversationnelle intégrée, graphiques, espaces complémentaires et tests React.
-- Le commit de documentation contient ce bilan, les guides et l'inventaire pédagogique. Voir `git log -3 --oneline` pour sa référence sans introduire d'autoréférence dans son propre contenu.
+- `4996c65` — documentation d'intégration et inventaire pédagogique. L'actualisation du 14 novembre ajoute le contrat de données définitif, le nouvel oracle et l'audit ; consulter `git log -4 --oneline` pour la référence de cette actualisation.
 
 Aucun commit ne contient les QVD, bases locales, rapports ou poids. Les serveurs lancés temporairement pour les essais ont été arrêtés ; les trois commandes du guide permettent un démarrage normal dans vos terminaux.

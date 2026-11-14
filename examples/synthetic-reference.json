@@ -1,0 +1,46 @@
+{
+  "synthetic": true,
+  "reference_version": "pedagogical-oracle-v1",
+  "description": "Oracle manuel indépendant : le générateur et le moteur analytique ne produisent pas ces attendus.",
+  "anchors": {
+    "agadir_feb_2025": 80000,
+    "agadir_feb_2024": 100000,
+    "agadir_change_pct": -20,
+    "marrakech_feb_2025": 165000,
+    "marrakech_feb_2024": 150000,
+    "marrakech_change_pct": 10,
+    "agadir_france_feb_2025": 25600,
+    "agadir_budget_feb_2025": 179200,
+    "agadir_committed_feb_2025": 170240
+  },
+  "calculation_oracle": {
+    "period": {"start": "2025-02-01", "end": "2025-02-28"},
+    "filters": {"destination": "Agadir"},
+    "sources": {
+      "commercial": [
+        {"record_key":"2025-02|Agadir|France","period":"2025-02-01","destination":"Agadir","market":"France","nights":20,"arrivals":10,"seats":80,"bookings":8},
+        {"record_key":"2025-02|Agadir|Espagne","period":"2025-02-01","destination":"Agadir","market":"Espagne","nights":80,"arrivals":15,"seats":120,"bookings":12}
+      ],
+      "finance": [
+        {"record_key":"2025-02|Agadir|France","period":"2025-02-01","destination":"Agadir","market":"France","budget_mad":1500,"spent_mad":600,"committed_mad":1000},
+        {"record_key":"2025-02|Agadir|Espagne","period":"2025-02-01","destination":"Agadir","market":"Espagne","budget_mad":500,"spent_mad":400,"committed_mad":500}
+      ],
+      "performance": [
+        {"record_key":"2025-02|Agadir|France","period":"2025-02-01","destination":"Agadir","market":"France","room_revenue_mad":1000,"room_nights_sold":10,"room_nights_available":40,"travel_receipts_mad":4000,"impressions":400,"clicks":20},
+        {"record_key":"2025-02|Agadir|Espagne","period":"2025-02-01","destination":"Agadir","market":"Espagne","room_revenue_mad":5000,"room_nights_sold":30,"room_nights_available":60,"travel_receipts_mad":16000,"impressions":1600,"clicks":80}
+      ]
+    },
+    "expected_units": {
+      "overnight_stays":"nuitees","arrivals":"arrivees","seats":"sieges","bookings":"reservations",
+      "budget":"MAD","spent":"MAD","committed":"MAD","travel_receipts":"MAD","room_revenue":"MAD",
+      "average_stay":"nuits/arrivee","occupancy":"%","revpar":"MAD/chambre-nuit","average_room_price":"MAD/chambre-nuit",
+      "budget_execution":"%","click_rate":"%","spend_per_night":"MAD/nuitee"
+    },
+    "expected": {
+      "overnight_stays":100,"arrivals":25,"seats":200,"bookings":20,
+      "budget":2000,"spent":1000,"committed":1500,"travel_receipts":20000,"room_revenue":6000,
+      "average_stay":4,"occupancy":40,"revpar":60,"average_room_price":150,
+      "budget_execution":50,"click_rate":5,"spend_per_night":10
+    }
+  }
+}

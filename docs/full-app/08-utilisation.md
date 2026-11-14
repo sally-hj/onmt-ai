@@ -2,6 +2,8 @@
 
 Toutes les commandes sont PowerShell depuis `C:\Users\OWNEER\onmt-ai`. Fermer l'ancien backend Salma s'il utilise déjà le port 8000 avant de lancer l'application complète. Un terminal occupé par un serveur doit rester ouvert.
 
+Le corpus synthétique est la référence définitive du rendu. Aucune commande d'import de données ONMT ni réception d'un QVD réel n'est nécessaire pour finaliser ce périmètre. Les traitements locaux demeurent réels.
+
 ## Préparation
 
 Sur le PC de développement, les modèles, Tesseract et Chromium ont déjà été préparés. Pour installer les dépendances supplémentaires et régénérer les QVD :
@@ -79,7 +81,7 @@ Le scénario de recalcul est testé avec un interpréteur simulé dans les tests
 
 ## Modifier les sources et les indicateurs
 
-La [documentation des données](03-donnees.md) décrit le remplacement des QVD. Fournir les fichiers réels et adapter `ONMT_QVD_ROOT`, `ONMT_SOURCES_CONFIG`, les unités et le grain ; faire ensuite valider les définitions. Ne pas supposer que les schémas réels correspondent au jeu synthétique.
+La [documentation des données](03-donnees.md) décrit une extension **facultative** vers d'autres QVD. Si elle est choisie ultérieurement, adapter `ONMT_QVD_ROOT`, `ONMT_SOURCES_CONFIG`, les unités, le grain et les attendus indépendants. Ce changement n'est pas une condition du rendu ; un autre schéma ne se réduit pas à remplacer un nom de fichier.
 
 Le [guide analytique](04-analyses.md) décrit l'ajout d'un indicateur. Les nouvelles formules doivent être testées dans le code, jamais exécutées depuis du texte libre envoyé par le modèle.
 
@@ -89,6 +91,9 @@ Le [guide analytique](04-analyses.md) décrit l'ajout d'un indicateur. Les nouve
 cd C:\Users\OWNEER\onmt-ai
 # Noyau et régressions ; aucun modèle IA requis pour ces cas.
 .\.venv\Scripts\python.exe -m pytest -q -m 'not models and not local_ai and not full_models and not browser'
+
+# Audit du corpus définitif : natif, reproductible, cohérent et calculs sur oracle manuel.
+.\.venv\Scripts\python.exe -m pytest backend\tests\test_synthetic_reference.py -q
 
 # OCR et recherche réels, sans le long scénario de rapport Salma.
 $env:ONMT_TEST_LOCAL_AI = '1'
