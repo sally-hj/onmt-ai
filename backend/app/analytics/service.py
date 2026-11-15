@@ -1,3 +1,4 @@
+from app.core.timing import measured
 """Calculs QVD testables et adaptateur AnalysisProvider pour les rapports de Salma."""
 import calendar
 from collections import defaultdict
@@ -9,15 +10,19 @@ from app.core.errors import AppError, forbidden
 from app.schemas.analysis import AnalysisResult, SeriesPoint
 from app.schemas.common import SourceReference
 from .forecasting import forecast
-from .metrics import METRICS, calculate, metric_catalog
+from .metrics import METRICS, FIELD_UNITS, evaluate, metric_catalog
 
 
 class AnalyticsService:
     def __init__(self, catalog, state):
         self.catalog,self.state = catalog,state
+        from .custom import CustomKpis
+        self.custom = CustomKpis(state,catalog)
+        from .products import Products
+        self.products=Products(self)
 
     def metrics(self, access):
-        return metric_catalog(access,self.catalog.sources)
+        return metric_catalog(access,self.catalog.sources)+[self.custom.metric(p).describe(self.catalog.sources) for p in self.custom.list(access)]
 
     def benchmark(self, request, access, group_by, dimensions=None):
         if group_by not in ['destination','market']:
@@ -45,8 +50,12 @@ class AnalyticsService:
 
     def _metric(self, metric_id, access):
         metric = METRICS.get(metric_id)
+        if metric is None:
+            metric=next((self.custom.metric(p) for p in self.custom.list(access) if p['definition']['id']==metric_id),None)
         if not metric:
             raise AppError('missing_data','Indicateur non défini ; aucun calcul inventé.',422)
+        if any(s not in self.catalog.sources for s in metric.fields):
+            raise AppError('missing_data','Source complémentaire absente ; préparez le corpus étendu.',422)
         if any(self.catalog.sources[s]['module'] not in access.allowed_modules for s in metric.fields):
             raise forbidden()
         return metric
@@ -55,9 +64,7 @@ class AnalyticsService:
         data, refs = {}, []
         for sid, fields in metric.fields.items():
             source = self.catalog.sources[sid]
-            units = {'overnight_stays':'nuitees','arrivals':'arrivees','seats':'sieges','bookings':'reservations',
-                     'rooms_sold':'chambres-nuits','rooms_available':'chambres-nuits','impressions':'impressions','clicks':'clics'}
-            if any(source.get('units',{}).get(f) != units.get(f,'MAD') for f in fields):
+            if any(source.get('units',{}).get(f) != FIELD_UNITS.get(f,'MAD') for f in fields):
                 raise AppError('data_quality','Unité incompatible avec la définition de l’indicateur ; validez le mapping métier.',422)
             rows, version = self.catalog.read_authorized_data(sid,['month','destination','market',*fields],filters,access)
             data[sid] = rows
@@ -84,15 +91,14 @@ class AnalyticsService:
             if len(rows) != len(months)*len(scopes):
                 warnings.append('incomplete_monthly_scope_grid')
         def value_for(month=None):
-            totals = {(s,f):sum(r[f] for r in rows if month is None or r['month']==month)
-                      for s,rows in selected.items() for f in metric.fields[s]}
-            return calculate(metric,totals)
+            return evaluate(metric,{s:[r for r in rows if month is None or r['month']==month] for s,rows in selected.items()})
         points = [SeriesPoint(date=date.fromisoformat(m),value=value_for(m),kind='observed') for m in months]
         value = value_for()
         if value is None:
-            warnings.append('zero_denominator')
+            warnings.append('insufficient_complete_history' if metric.kind in ['annual_growth','cagr','seasonality'] else 'zero_denominator')
         return value,points,warnings
 
+    @measured('calcul_controles')
     def run(self, request, access):
         metric = self._metric(request.metric_id,access)
         for period in [request.period,request.comparison_period]:
@@ -117,12 +123,16 @@ class AnalyticsService:
         if self.catalog.config['synthetic']:
             warnings.append('synthetic_data_no_economic_causality')
         warnings.append(metric.limit)
+        if metric.expression: warnings.append(f'metric_definition_version:{metric.version}')
         incomplete = any(w.startswith(('incomplete_','requested_period','zero_denominator','comparison_unavailable')) for w in warnings)
         result = AnalysisResult(request_id=request.request_id,analysis_id='ana_'+uuid4().hex,metric_id=metric.id,
             status='unavailable' if current is None else 'partial' if incomplete else 'ok',period=request.period,
             comparison_period=request.comparison_period,filters=request.filters,unit=metric.unit,values=values,series=series,
             formula=metric.source_formula(self.catalog.sources),sources=sources,warnings=sorted(set(warnings)),is_synthetic=self.catalog.config['synthetic'])
         self.state.save_analysis(result,access.user_id,request,access.allowed_territories)
+        self.state.audit_log.append(access.user_id,request.request_id,'analytics.run',result.analysis_id,
+            outcome=result.status,versions={s.source_id:s.version for s in result.sources},
+            details={'formula':result.formula,'period':request.period.model_dump(mode='json'),'filters':request.filters})
         return result
 
     def authorize_snapshot(self, analysis_id, access_context):
@@ -130,7 +140,7 @@ class AnalyticsService:
         if not payload:
             raise forbidden()
         result = AnalysisResult.model_validate(payload['result'])
-        self._metric(result.metric_id,access_context)
+        metric=self._metric(result.metric_id,access_context)
         destination = result.filters.get('destination')
         if destination and destination not in access_context.allowed_territories:
             raise forbidden()
@@ -142,6 +152,9 @@ class AnalyticsService:
 
     def get_analysis(self, analysis_id, access_context):
         result = self.authorize_snapshot(analysis_id,access_context)
+        metric=self._metric(result.metric_id,access_context)
+        if metric.expression and f'metric_definition_version:{metric.version}' not in result.warnings:
+            raise AppError('stale_analysis','Définition du KPI modifiée ; recalcul requis.',409)
         versions = self.catalog.versions([s.source_id for s in result.sources])
         if any(versions[s.source_id] != s.version for s in result.sources):
             raise AppError('stale_analysis','Sources modifiées : relancez le calcul avant de réutiliser ce résultat.',409)

@@ -1,7 +1,9 @@
+from app.core.timing import measured
 """Lecture native autorisée : les fichiers QVD restent les seules sources tabulaires."""
 import hashlib
 from datetime import date, datetime, timedelta
 from pathlib import Path
+from threading import RLock
 
 from pyqvd import QvdTable
 
@@ -30,6 +32,8 @@ def normalize_month(value):
 class QvdReader:
     def __init__(self, root: Path):
         self.root = root.resolve()
+        self.cache={}
+        self.cache_lock=RLock()
 
     def path(self, source):
         path = (self.root/source['file']).resolve()
@@ -37,6 +41,7 @@ class QvdReader:
             raise AppError('invalid_request','Chemin de source QVD non autorisé.',422)
         return path
 
+    @measured('lecture_qvd')
     def read(self, source, access, filters=None):
         if source['module'] not in access.allowed_modules or not access.allowed_territories:
             raise forbidden()
@@ -48,7 +53,14 @@ class QvdReader:
         path = self.path(source)
         before = source_version(path)
         try:
-            table = QvdTable.from_qvd(path).to_dict()
+            with self.cache_lock:
+                cached=self.cache.get(str(path))
+                if cached and cached[0]==before:
+                    table=cached[1]
+                else:
+                    table=QvdTable.from_qvd(path).to_dict()
+                    if len(self.cache)>=8: self.cache.clear()
+                    self.cache[str(path)]=(before,table)
         except Exception as exc:
             raise AppError('tool_failed','QVD illisible ; vérifier format, compression et compatibilité PyQvd.',422) from exc
         if source_version(path) != before:

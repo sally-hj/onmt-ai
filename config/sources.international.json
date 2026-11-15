@@ -1,0 +1,48 @@
+{
+  "label": "Comparateurs internationaux fictifs — simulation pédagogique",
+  "synthetic": true,
+  "sources": [
+    {
+      "id": "international",
+      "file": "supplement/international.qvd",
+      "module": "commercial",
+      "grain": [
+        "month",
+        "destination",
+        "market"
+      ],
+      "fields": {
+        "key": "record_key",
+        "month": "period",
+        "destination": "destination",
+        "market": "market",
+        "arrivals": "arrivals",
+        "overnight_stays": "nights",
+        "seats": "seats",
+        "bookings": "bookings",
+        "travel_receipts": "receipts_mad",
+        "room_revenue": "room_revenue_mad",
+        "rooms_sold": "rooms_sold",
+        "rooms_available": "rooms_available",
+        "gdp": "gdp_mad",
+        "tourism_gva": "tourism_gva_mad",
+        "market_total_arrivals": "market_total_arrivals",
+        "competitor_arrivals": "competitor_arrivals"
+      },
+      "units": {
+        "arrivals": "arrivees",
+        "overnight_stays": "nuitees",
+        "seats": "sieges",
+        "bookings": "reservations",
+        "travel_receipts": "MAD",
+        "room_revenue": "MAD",
+        "rooms_sold": "chambres-nuits",
+        "rooms_available": "chambres-nuits",
+        "gdp": "MAD",
+        "tourism_gva": "MAD",
+        "market_total_arrivals": "arrivees",
+        "competitor_arrivals": "arrivees"
+      }
+    }
+  ]
+}
