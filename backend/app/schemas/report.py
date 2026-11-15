@@ -12,7 +12,10 @@ class ReportRequest(Contract):
     analysis_ids: list[str] = Field(min_length=1, max_length=30)
     title: str = Field(min_length=1, max_length=300)
     language: Language
-    audience: Literal['direction', 'ministere', 'regional']
+    audience: Literal['direction', 'ministere', 'regional', 'international']
+    layout: Literal['standard','strategic_15'] = 'standard'
+    question: str = Field(default='',max_length=4000)
+    diagnostic_ids: list[str] = Field(default_factory=list,max_length=12)
     sections: list[SectionId] = Field(min_length=1)
 
     @model_validator(mode='after')
@@ -39,6 +42,7 @@ class ReportResult(Contract):
     download_path: str | None
     warnings: list[str]
     is_synthetic: bool
+    proposals: list[dict] = Field(default_factory=list)
 
     @model_validator(mode='after')
     def references(self):

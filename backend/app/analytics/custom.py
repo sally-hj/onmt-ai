@@ -39,8 +39,8 @@ class CustomKpis:
         with state.connect() as db:
             db.execute('CREATE TABLE IF NOT EXISTS custom_kpis(id TEXT, version INTEGER, author TEXT, status TEXT, payload TEXT, PRIMARY KEY(id,version))')
 
-    def validate(self, spec, access):
-        if 'report_editor' not in access.roles:
+    def validate(self, spec, access,write=False):
+        if write and 'report_editor' not in access.roles:
             raise forbidden()
         units=[]
         for term in [spec.numerator,spec.denominator]:
@@ -84,7 +84,7 @@ class CustomKpis:
         return result
 
     def propose(self, spec, access):
-        unit=self.validate(spec,access)
+        unit=self.validate(spec,access,write=True)
         with self.state.connect() as db:
             db.execute('BEGIN IMMEDIATE')
             if db.execute('SELECT COUNT(DISTINCT id) FROM custom_kpis').fetchone()[0]>=64:
@@ -105,7 +105,7 @@ class CustomKpis:
             rows=db.execute("SELECT payload FROM custom_kpis WHERE author=? AND status='draft'",(access.user_id,)).fetchall()
             payload=next((json.loads(r[0]) for r in rows if json.loads(r[0])['proposal_id']==proposal_id),None)
             if not payload: raise forbidden()
-            self.validate(KpiDefinition.model_validate(payload['definition']),access)
+            self.validate(KpiDefinition.model_validate(payload['definition']),access,write=True)
             if not payload.get('example_validated'):
                 raise AppError('invalid_request','Calculer et vérifier un exemple avant confirmation.',422)
             payload['status']='active'

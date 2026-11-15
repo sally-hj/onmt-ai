@@ -9,6 +9,7 @@ def analysis_request(intent, context):
     previous = context.get('analysis_request',{})
     operation = intent.operation or previous.get('operation') or 'value'
     filters = dict(previous.get('filters',{}))
+    for key in intent.clear_filters: filters.pop(key,None)
     if intent.destination is not None:
         filters['destination'] = intent.destination
     if intent.market is not None:

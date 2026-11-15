@@ -1,0 +1,24 @@
+<!doctype html><html lang="{{ language }}" dir="{{ 'rtl' if rtl else 'ltr' }}"><meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'">
+<style>
+@page { size:320mm 180mm; margin:0 } *{box-sizing:border-box}
+body{margin:0;font:17px Arial,'Segoe UI',sans-serif;color:#18352e;background:#f7f5ed}
+.slide{width:320mm;height:180mm;padding:16mm 18mm;break-after:page;position:relative;border-top:4mm solid #226556}
+.slide:last-child{break-after:auto} h1{font-size:32px;margin:0 0 18px;line-height:1.2}p{margin:8px 0;overflow-wrap:anywhere;line-height:1.4;white-space:normal;unicode-bidi:plaintext}
+.brand{font-size:13px;margin-bottom:12px;letter-spacing:2px}.synthetic{color:#a34b33;font-weight:bold}
+.content{max-height:510px}.plot{height:220px;width:100%;direction:ltr}.plot text{font-size:12px}
+.footer{position:absolute;bottom:8mm;left:18mm;right:18mm;font-size:11px;display:flex;justify-content:space-between;border-top:1px solid #abc4b8;padding-top:7px}
+.muted{color:#556c63;font-size:13px} .missing{padding:18px;background:#fff1cf}
+</style><body>
+{% for slide in slides %}<article class="slide">
+<div class="brand">ONMT AI · {% if payload.result.is_synthetic %}<span class="synthetic">{{ t.synthetic }}</span>{% endif %}</div>
+<h1>{{ slide.title }}</h1><div class="content {{ 'missing' if slide.missing else '' }}">
+{% for line in slide.lines %}<p>{{ line }}</p>{% endfor %}
+{% if slide.matrix %}<svg class="plot" viewBox="0 0 1100 280"><path d="M45 20V240H1050" fill="none" stroke="#71897e"/>{% for point in slide.matrix %}<circle cx="{{ point.x }}" cy="{{ point.y }}" r="6" fill="#226556"/><text x="{{ point.x+10 }}" y="{{ point.y-8 }}">{{ point.label }} · {{ point.a }} / {{ point.b }}</text>{% endfor %}</svg>{% endif %}
+{% for plot in slide.plots %}<p class="muted" dir="ltr">{{ plot.metric }} · {{ plot.unit }} · {{ plot.source }}</p>
+<svg class="plot" viewBox="0 0 1100 280"><path d="M35 25V240H1060" fill="none" stroke="#71897e"/>
+{% for point in plot.points %}<circle cx="{{ point.x }}" cy="{{ point.y }}" r="3" fill="{{ '#b65b42' if point.kind=='forecast' else '#226556' }}"><title>{{ point.date }} : {{ point.value }} {{ plot.unit }} · {{ point.kind }}</title></circle>{% endfor %}
+<text x="45" y="265">{{ plot.points[0].date }} · {{ plot.points[0].value }}</text><text x="780" y="265">{{ plot.points[-1].date }} · {{ plot.points[-1].value }}</text></svg>{% endfor %}
+{% if slide.abridged %}<p class="muted">[…] · {{ t.sources }} : {{ payload.result.report_id }} v{{ payload.result.version }} — {{ t.limit }}</p>{% endif %}
+</div><footer class="footer"><span>{{ payload.result.report_id }} · v{{ payload.result.version }}</span><span>{{ loop.index }} / 25</span></footer></article>{% endfor %}
+</body></html>

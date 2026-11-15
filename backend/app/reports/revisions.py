@@ -15,7 +15,7 @@ def parse_revision(instruction):
         return {'style': 'rephrase'}
     if normalized.startswith('langue:') and normalized[7:].strip() in ['fr', 'ar', 'ary', 'en', 'es']:
         return {'language': normalized[7:].strip()}
-    if normalized.startswith('adapter:') and normalized[8:].strip() in ['direction', 'ministere', 'regional']:
+    if normalized.startswith('adapter:') and normalized[8:].strip() in ['direction', 'ministere', 'regional','international']:
         return {'audience': normalized[8:].strip()}
     if re.search(r'calcul|nouveau.*(?:marché|kpi)|ajout.*(?:marché|roi|budget)|prévoir|recalcul', normalized):
         raise AppError('missing_data', 'Nouvelle analyse requise : demande à transmettre à Doha via Hayat. Aucun calcul ajouté au rapport.', 422)

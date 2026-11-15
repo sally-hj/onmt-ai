@@ -22,7 +22,7 @@ class AnalyticsService:
         self.products=Products(self)
 
     def metrics(self, access):
-        return metric_catalog(access,self.catalog.sources)+[self.custom.metric(p).describe(self.catalog.sources) for p in self.custom.list(access)]
+        return metric_catalog(access,self.catalog.sources)+[{**self.custom.metric(p).describe(self.catalog.sources),'author':p['author'],'created_at':p['created_at']} for p in self.custom.list(access)]
 
     def benchmark(self, request, access, group_by, dimensions=None):
         if group_by not in ['destination','market']:

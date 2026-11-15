@@ -23,7 +23,7 @@ def test_full_workspace_browser():
             'period':{'start':'2025-02-01','end':'2025-02-28'},'comparison_period':{'start':'2024-02-01','end':'2024-02-29'},
             'filters':{'destination':'Agadir'},'language':'fr'})
         assert response.status_code==201,response.text
-    output = ROOT/'local_data/full-app-results';output.mkdir(parents=True,exist_ok=True)
+    output = ROOT/'local_data/cps-completion-results/browser-regression';output.mkdir(parents=True,exist_ok=True)
     with sync_playwright() as p:
         browser = p.chromium.launch()
         try:
@@ -69,7 +69,7 @@ def test_full_workspace_browser():
             expect(page.get_by_role('button',name='Actualiser et vérifier')).to_be_enabled(timeout=30000)
             page.screenshot(path=str(output/'04-sources.png'),full_page=True)
             page.get_by_role('navigation').get_by_role('button',name='Alertes',exact=False).click()
-            expect(page.locator('.w-alert-card').filter(has_text='Agadir')).to_contain_text('-20 %')
+            expect(page.locator('.w-alert-card').filter(has_text='Agadir').first).to_contain_text('-20 %')
             page.screenshot(path=str(output/'05-alertes.png'),full_page=True)
             page.set_viewport_size({'width':390,'height':844})
             page.get_by_label('Ouvrir la navigation').click()

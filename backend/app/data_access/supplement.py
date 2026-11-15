@@ -11,6 +11,25 @@ from app.core.config import ROOT
 from .synthetic import semantic_digest, write_qvd
 
 COMPARATORS = ['Maroc', 'Tunisie', 'Espagne', 'Dubaï', 'Thaïlande', 'Rwanda']
+REGIONS = ['Tanger-Tétouan-Al Hoceima','Oriental','Fès-Meknès','Rabat-Salé-Kénitra',
+           'Béni Mellal-Khénifra','Casablanca-Settat','Marrakech-Safi','Drâa-Tafilalet',
+           'Souss-Massa','Guelmim-Oued Noun','Laâyoune-Sakia El Hamra','Dakhla-Oued Ed-Dahab']
+
+
+def regional_rows():
+    rows=[]
+    for year in range(2021,2027):
+        for month in range(1,13 if year<2026 else 11):
+            for i,region in enumerate(REGIONS):
+                growth=[.10,.10,.02,.02][i%4]; share=[1.5,.5,1.5,.5][i%4]
+                arrivals=round((50000+i*10000)*(1+growth)**(year-2021)*(1+.1*math.sin(month*math.pi/6)))
+                nights=arrivals*3; rooms=round(nights/1.8)
+                rows.append({'record_key':f'{year}-{month:02}|{region}|Total','period':f'{year}-{month:02}-01','destination':region,'market':'Total',
+                    'arrivals':arrivals,'nights':nights,'seats':arrivals*2,'bookings':round(arrivals*.7),'receipts_mad':nights*700,
+                    'room_revenue_mad':rooms*600,'rooms_sold':rooms,'rooms_available':rooms*2,'gdp_mad':float(arrivals*50000),
+                    'tourism_gva_mad':float(arrivals*4000),'market_total_arrivals':round(arrivals*(2+1/share)),
+                    'competitor_arrivals':round(arrivals/share)})
+    return rows
 
 
 def native_rows(path):
@@ -61,7 +80,8 @@ def prepare(root):
                     'competitor_arrivals':round(arrivals/(.7+.15*i))})
     manifest={'version':'supplement-v1','synthetic':True,'reference_files_unchanged':True,
               'convention':'Grandeurs monétaires générées directement en MAD de scénario ; aucune conversion de devises.',
-              'files':[ensure_table(directory/'extension.qvd',extension),ensure_table(directory/'international.qvd',international)],
+              'files':[ensure_table(directory/'extension.qvd',extension),ensure_table(directory/'international.qvd',international),
+                       ensure_table(directory/'regional.qvd',regional_rows())],
               'reference_hashes':{n:hashlib.sha256((root/f'{n}.qvd').read_bytes()).hexdigest() for n in ['commercial','finance','performance']}}
     (directory/'manifest.json').write_text(json.dumps(manifest,ensure_ascii=False,indent=2),encoding='utf-8')
     return manifest

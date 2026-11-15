@@ -30,13 +30,16 @@ class AuditLog:
 
     def verify(self, trusted_head=None):
         previous='0'*64; count=0
+        anchor_matches=trusted_head is None or trusted_head=={'seq':0,'digest':'0'*64}
         with sqlite3.connect(self.path) as db:
             for seq,event,link,digest in db.execute('SELECT * FROM events ORDER BY seq'):
                 if seq!=count+1 or link!=previous or digest!=self.digest(seq,event,link):
                     return {'valid':False,'at_sequence':seq,'count':count,'reason':'chain_mismatch'}
                 previous=digest; count+=1
+                if trusted_head and trusted_head.get('seq')==seq:
+                    anchor_matches=trusted_head.get('digest')==digest
         head={'seq':count,'digest':previous}
-        return {'valid':trusted_head is None or trusted_head==head,'count':count,'head':head,
+        return {'valid':anchor_matches,'count':count,'head':head,
                 'external_anchor_checked':trusted_head is not None,'limit':'Un administrateur contrôlant tout le stockage peut réécrire la chaîne ; conserver les empreintes hors du poste pour détecter une troncature ou reconstruction.'}
 
 
@@ -48,6 +51,7 @@ if __name__=='__main__':
     parser.add_argument('--directory',type=Path,default=ROOT/'local_data/full-app')
     parser.add_argument('--anchor',type=Path,help='Empreinte de tête précédemment conservée sur un support de confiance.')
     args=parser.parse_args()
+    if not (args.directory/'audit.sqlite3').is_file(): parser.error('Journal absent ; aucune vérification possible.')
     result=AuditLog(args.directory).verify(json.loads(args.anchor.read_text(encoding='utf-8')) if args.anchor else None)
     print(json.dumps(result,ensure_ascii=False,indent=2))
     raise SystemExit(0 if result['valid'] else 1)

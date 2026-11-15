@@ -121,6 +121,8 @@ def test_bcg_uses_market_growth_and_competitor():
     assert bcg_point(200,100,1200,1000,100)=={'quadrant':'vedette','market_growth_pct':20,'relative_share':2}
     assert bcg_point(200,100,1000,1000,400)['quadrant']=='poids_mort'
     assert bcg_point(200,100,1000,0,400)['quadrant']=='indetermine'
+    assert bcg_point(50,50,1200,1000,100)['quadrant']=='dilemme'
+    assert bcg_point(200,100,1000,1000,100)['quadrant']=='vache_a_lait'
 
 
 def test_butler_needs_more_than_a_single_change():
@@ -161,3 +163,19 @@ def test_diagnostic_snapshot_persistence_and_revoked_rights(service):
     assert service.products.get(diagnostic['diagnostic_id'],access())==diagnostic
     with pytest.raises(AppError): service.products.get(diagnostic['diagnostic_id'],access().model_copy(update={'user_id':'other'}))
     with pytest.raises(AppError): service.products.get(diagnostic['diagnostic_id'],access().model_copy(update={'allowed_modules':['reports','commercial']}))
+
+
+def test_long_horizon_is_a_mechanical_scenario_with_periodic_manual_answer():
+    from app.analytics.forecasting import forecast
+    points=[SeriesPoint(date=f'{year}-{month:02}-01',value=month*100,kind='observed') for year in range(2022,2026) for month in range(1,13)]
+    projected,warnings=forecast(points,60)
+    assert [p.value for p in projected[:14]]==[100,200,300,400,500,600,700,800,900,1000,1100,1200,100,200]
+    assert str(projected[-1].date)=='2030-12-01' and projected[-1].value==1200
+    assert 'long_horizon_mechanical_scenario_not_calibrated_for_2030' in warnings
+
+
+def test_scenario_is_not_an_observation_and_rejects_ratio(service):
+    result=Diagnostics(service).scenario(request('overnight_stays'),access(),-10)
+    assert result['baseline']==100 and result['scenario_value']==90 and result['shock_pct']==-10
+    assert result['kind']=='scenario' and 'pas une observation' in result['warning']
+    with pytest.raises(AppError): Diagnostics(service).scenario(request('occupancy'),access(),5)

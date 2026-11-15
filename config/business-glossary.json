@@ -1,0 +1,12 @@
+{
+  "version":"1",
+  "terms":[
+    {"id":"overnight_stays","fr":"nuitées","en":"overnight stays","es":"pernoctaciones","ar":"الليالي السياحية","ary":"الليالي السياحية","forbidden_ar":["النهارات","إقامة نهارية"]},
+    {"id":"arrivals","fr":"arrivées","en":"arrivals","es":"llegadas","ar":"الوافدون","ary":"الوافدين"},
+    {"id":"average_stay","fr":"durée moyenne de séjour","en":"average length of stay","es":"estancia media","ar":"متوسط مدة الإقامة","ary":"متوسط مدة الإقامة"},
+    {"id":"budget","fr":"budget prévu","en":"planned budget","es":"presupuesto previsto","ar":"الميزانية المقررة","ary":"الميزانية المقررة"}
+  ],
+  "allowed_acronyms":["ONMT","OMT","WTTC","WEF","RevPAR","BCG","Butler","MAD","ATI","DMS","ROI","TCA","TCAM","TRP","PMD","DMT","DMN","TTCI","IDT","IPR","SVM","IRT","VR","SFE","ECT","ICME","CGT","ISM"],
+  "proper_names":["Agadir","Marrakech","Fès","Tanger","Rabat","Casablanca","France","Espagne","Allemagne","Royaume-Uni","Maroc","Tunisie","Dubaï","Thaïlande","Rwanda"],
+  "human_validation":"Non réalisée ; arabe et darija restent des brouillons à relire."
+}

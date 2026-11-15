@@ -26,9 +26,11 @@ class Products:
         payload=json.loads(row[0]); result=payload['result']
         if not set(payload['scope']).issubset(access.allowed_territories): raise forbidden()
         if result.get('source'):
-            catalog=Catalog(ROOT/'config/sources.international.json',self.analytics.catalog.reader.root)
+            source_id=result['source'].get('id','international')
+            if source_id not in ['international','regional']: raise forbidden()
+            catalog=Catalog(ROOT/f'config/sources.{source_id}.json',self.analytics.catalog.reader.root)
             if 'commercial' not in access.allowed_modules: raise forbidden()
-            if catalog.versions(['international'])['international']!=result['source']['version']:
+            if catalog.versions([source_id])[source_id]!=result['source']['version']:
                 raise AppError('stale_analysis','Comparateurs modifiés : recalculer le diagnostic.',409)
         identifiers=[]
         if result.get('analysis_id'): identifiers.append(result['analysis_id'])

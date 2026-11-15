@@ -1,6 +1,8 @@
+from app.core.timing import measured
 """Prose réellement rédigée par le LLM, faits numériques injectés et vérifiés par le serveur."""
 import re
 import unicodedata
+import json
 from collections import Counter
 
 from pydantic import Field
@@ -9,6 +11,20 @@ from app.core.errors import AppError
 from app.schemas.common import Contract
 from app.schemas.report import ReportSection
 from .generation import SECTION_IDS, TEXT, facts, render_fact
+from app.core.config import ROOT
+
+GLOSSARY=json.loads((ROOT/'config/business-glossary.json').read_text(encoding='utf-8'))
+
+
+def validate_arabic_script(prose):
+    # Retirer uniquement les noms et sigles déclarés avant de vérifier le script.
+    remainder=prose
+    for name in sorted(GLOSSARY['allowed_acronyms']+GLOSSARY['proper_names'],key=len,reverse=True):
+        remainder=re.sub(r'(?<![A-Za-z\u00c0-\u024f])'+re.escape(name)+r'(?![A-Za-z\u00c0-\u024f])','',remainder)
+    if not re.search(r'[\u0600-\u06ff]',remainder):
+        raise ValueError('Prose arabe requise ; les noms propres ne suffisent pas.')
+    if any(c.isalpha() and 'ARABIC' not in unicodedata.name(c,'') for c in remainder):
+        raise ValueError('Alphabet inattendu hors des noms propres et sigles autorisés.')
 
 TOKEN = re.compile(r'\{\{([FD]\d{3})\}\}')
 NUMBER_WORDS = re.compile(r'\b(deux|trois|quatre|cinq|dix|vingt|cent|mille|million|milliard|'
@@ -104,6 +120,7 @@ class NarrativeWriter:
     def __init__(self, client):
         self.client = client
 
+    @measured('generation')
     def generate_section(self, request, section_id, analyses, evidence, options=None):
         options = options or {}
         language = options.get('language', request.language)
@@ -174,6 +191,11 @@ class NarrativeWriter:
                    'untrusted_documents': documents}
         # Champs obligatoires : une prose réellement générée par preuve ; les valeurs restent côté serveur.
         payload['required_introductions'] = list(ledger)
+        if request.layout=='strategic_15':
+            system+=('\nPour cette note structurée, rédige un paragraphe de deux phrases par preuve : '
+                     'présente son rôle dans le diagnostic puis une implication prudente ou une vérification précise à effectuer. '
+                     'La clôture relie les éléments disponibles à la décision demandée, sans cause, chiffre ou résultat supplémentaire. '
+                     'Les sections ont des buts distincts : diagnostic historique, comparaison, prévisions ou propositions à valider.')
         system += ('\nRédige des introductions différentes pour la période étudiée, la référence, la variation et le contexte documentaire. '
                    'Adapte le vocabulaire au contenu fourni, sans phrase générique répétée. '
                    'Si validated_direction est fourni, tu peux qualifier la comparaison par ce sens exact, déjà calculé par le serveur, '
@@ -186,9 +208,6 @@ class NarrativeWriter:
                    'sans déduire une hausse des visiteurs à partir d’une hausse des nuitées.')
         prose_schema = {'type': 'string', 'minLength': 1, 'maxLength': 240,
                         'pattern': '^[^0-9\u00b2\u00b3\u00b9\u0660-\u0669\u06f0-\u06f9\u2070-\u2099\u2160-\u2188\u2460-\u249b\u2776-\u2793\uff10-\uff19%％{}\\[\\]]*$'}
-        if language in ['ar', 'ary']:
-            # Obligation de script dans les valeurs JSON ; les identifiants des champs restent ASCII.
-            prose_schema['pattern'] = prose_schema['pattern'].replace('^' + '[^', '^' + '[^A-Za-z\u00c0-\u024f', 1)
         schema = EditorialDraft.model_json_schema()
         schema['properties']['closing'] = {**prose_schema, 'maxLength': 240}
         schema['properties']['introductions'] = {'type': 'object', 'properties': {k: prose_schema for k in ledger},
@@ -207,10 +226,7 @@ class NarrativeWriter:
                 prose = ' '.join(editorial.introductions.values()) + editorial.closing
                 if language in ['ar', 'ary'] and not re.search(r'[\u0600-\u06ff]', prose):
                     raise ValueError('La prose doit être rédigée dans la langue arabe demandée, pas seulement son titre.')
-                if language in ['ar', 'ary'] and re.search(r'[A-Za-z\u00c0-\u024f]', prose):
-                    raise ValueError('Toutes les introductions et la clôture doivent être en arabe ; aucun paragraphe français ou anglais.')
-                if language in ['ar','ary'] and any(c.isalpha() and 'ARABIC' not in unicodedata.name(c,'') for c in prose):
-                    raise ValueError('La prose arabe contient des lettres d’un autre alphabet ; omets les noms de villes plutôt que les translittérer.')
+                if language in ['ar','ary']: validate_arabic_script(prose)
                 if language in ['ar','ary'] and any(r.get('metric_id')=='overnight_stays' for k,r in ledger.items() if k.startswith('F')) and re.search('النهارات|إقامة نهارية',prose):
                     raise ValueError('Erreur de sens : nuitées signifie الليالي السياحية et jamais des journées.')
                 # Ces jetons sont assemblés par le code après génération, jamais fabriqués par le LLM.

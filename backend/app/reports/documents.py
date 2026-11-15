@@ -4,6 +4,7 @@ from pydantic import Field
 
 from app.core.security import ResourcePolicy
 from app.schemas.common import Contract, Language, SourceReference
+from app.schemas.common import Period
 
 
 class DocumentMetadata(Contract):
@@ -11,6 +12,12 @@ class DocumentMetadata(Contract):
     language: Language
     publisher: str = Field(default='', max_length=300)
     issued_on: str = Field(default='', max_length=40)
+    synthetic: bool = False
+    kind: Literal['methodology','dictionary','destination','market','campaign','diagnostic','other'] = 'other'
+    context: str = Field(default='',max_length=800)
+    period: Period | None = None
+    corpus_id: str | None = Field(default=None,max_length=100)
+    edition: str = Field(default='1',max_length=40)
 
 
 class Passage(Contract):
@@ -34,6 +41,7 @@ class DocumentRecord(Contract):
     passages: list[Passage]
     warnings: list[str]
     processing_signature: str = 'text-v1'
+    index_identity: str = ''
 
 
 class Evidence(Contract):

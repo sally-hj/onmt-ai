@@ -1,3 +1,4 @@
+from app.core.timing import measured
 from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
@@ -8,7 +9,11 @@ from .generation import TEXT, facts
 
 
 class PDFExporter:
+    @measured('export_pdf')
     def render(self, payload):
+        if payload['request'].get('layout')=='strategic_15':
+            from .strategic import render_strategic
+            return render_strategic(payload)
         from playwright.sync_api import sync_playwright
         request = payload['request']
         analyses = [AnalysisResult.model_validate(a) for a in payload['analyses']]

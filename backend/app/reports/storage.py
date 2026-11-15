@@ -10,6 +10,8 @@ from app.core.errors import AppError
 class Store:
     def __init__(self, directory: Path):
         directory.mkdir(parents=True, exist_ok=True)
+        from app.core.audit import AuditLog
+        self.audit_log = AuditLog(directory)
         self.path = directory / 'reporting.sqlite3'
         with self.connect() as db:
             db.executescript('''
@@ -25,6 +27,14 @@ class Store:
             ''')
             if 'original_pdf' not in {r[1] for r in db.execute('PRAGMA table_info(documents)')}:
                 db.execute('ALTER TABLE documents ADD COLUMN original_pdf BLOB')
+            if 'deck' not in {r[1] for r in db.execute('PRAGMA table_info(reports)')}:
+                db.execute('ALTER TABLE reports ADD COLUMN deck BLOB')
+            # Migration conservatrice : les imports antérieurs restent privés.
+            for row in db.execute('SELECT id,version,payload FROM documents').fetchall():
+                payload=json.loads(row['payload'])
+                if 'private' not in payload['policy']:
+                    payload['policy']['private']=True
+                    db.execute('UPDATE documents SET payload=? WHERE id=? AND version=?',(json.dumps(payload,ensure_ascii=False),row['id'],row['version']))
 
     @contextmanager
     def connect(self):
@@ -88,6 +98,7 @@ class Store:
             return bytes(row[0]) if row and row[0] else None
 
     def audit(self, user_id, request_id, action, resource_id):
+        self.audit_log.append(user_id,request_id,action,resource_id)
         with self.connect() as db:
             db.execute('INSERT INTO audit(user_id,request_id,action,resource_id) VALUES (?,?,?,?)',
                        (user_id, request_id, action, resource_id))

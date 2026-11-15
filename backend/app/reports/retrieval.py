@@ -1,3 +1,4 @@
+from app.core.timing import measured
 import hashlib
 import math
 import re
@@ -98,10 +99,19 @@ class Retriever:
     def __init__(self, store, index, max_distance=0.35):
         self.store, self.index, self.max_distance = store, index, max_distance
 
-    def search_evidence(self, question, access_context, limit=5):
+    @measured('recherche_documentaire')
+    def search_evidence(self, question, access_context, limit=5, period=None):
         require_module(access_context)
+        if period is None:
+            from app.conversation.slots import explicit_periods
+            from app.schemas.common import Period
+            explicit=explicit_periods(question)
+            if explicit: period=Period(start=min(p['start'] for p in explicit),end=max(p['end'] for p in explicit))
         docs = [DocumentRecord.model_validate(d) for d in self.store.documents()]
         docs = [d for d in docs if can_read(d.policy, access_context)]
+        if period:
+            docs=[d for d in docs if d.metadata.kind in ['methodology','dictionary'] or d.metadata.period is None
+                  or (d.metadata.period.start<=period.end and period.start<=d.metadata.period.end)]
         if not docs:
             return EvidenceResult(evidence=[], warnings=['documentary_evidence_absent'])
         lookup = {p.chunk_id: (d,p) for d in docs for p in d.passages}
@@ -122,4 +132,20 @@ class Retriever:
             warnings.append('ocr_evidence_requires_human_review_numbers_unverified')
         if isinstance(self.index.embedder, DemoHashEmbedder):
             warnings.append('demo_embeddings_non_semantic')
+        # Signaler des orientations textuelles opposées, sans les arbitrer comme vérité.
+        excerpts=' '.join(e.passage.text.casefold() for e in evidence)
+        if re.search(r'hausse|increase|ارتفاع',excerpts) and re.search(r'baisse|decrease|انخفاض',excerpts):
+            warnings.append('potentially_conflicting_documentary_claims_review_required')
         return EvidenceResult(evidence=evidence, warnings=warnings)
+
+    def search_report(self, request, analyses, access):
+        from app.analytics.metrics import METRICS
+        context=' ; '.join([*[(METRICS[a.metric_id].label if a.metric_id in METRICS else a.metric_id)+f" {a.filters} {a.period.start}/{a.period.end}" for a in analyses],
+                            ' '.join(request.sections),request.language])[:1500]
+        periods=[a.period for a in analyses]
+        from app.schemas.common import Period
+        period=Period(start=min(p.start for p in periods),end=max(p.end for p in periods)) if periods else None
+        found=[self.search_evidence(request.question or request.title,access,period=period),self.search_evidence(context,access,period=period)]
+        chosen={e.passage.chunk_id:e for result in found for e in result.evidence}
+        warnings=sorted({w for result in found for w in result.warnings if not chosen or w not in ['documentary_evidence_absent','documentary_evidence_insufficient']})
+        return EvidenceResult(evidence=sorted(chosen.values(),key=lambda e:e.distance)[:8],warnings=warnings)
