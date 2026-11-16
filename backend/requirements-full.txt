@@ -1,3 +1,0 @@
--r requirements-reporting-models.txt
-pyqvd==2.4.0
-langgraph==1.2.20

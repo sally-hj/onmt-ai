@@ -1,7 +1,0 @@
--r requirements-reporting.txt
-# Modèles locaux ; runtime C++ limité à la venv Windows.
-sentence-transformers==6.2.0
-transformers==5.22.1
-torch==2.15.0
-ollama==0.6.3
-msvc-runtime==14.44.35112; sys_platform == 'win32'

@@ -12,5 +12,5 @@ $env:OLLAMA_MODELS = Join-Path $projectRoot 'local_data\models\ollama'
 $env:OLLAMA_NO_CLOUD = '1'
 $env:OLLAMA_NUM_PARALLEL = '1'
 $env:OLLAMA_MAX_LOADED_MODELS = '1'
-$env:OLLAMA_CONTEXT_LENGTH = '3072'
+$env:OLLAMA_CONTEXT_LENGTH = '4096'
 & $ollamaExe serve
