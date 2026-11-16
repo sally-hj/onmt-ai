@@ -1,5 +1,7 @@
 # Doha : calculer sans inventer
 
+> Actualisation du 16 novembre : cette page explique le socle d'intégration. Pour les ajouts courants (46 KPI, diagnostics, spécialistes, tâches et présentation), consulter la [matrice](01-couverture-cps.md), les [conventions](12-catalogue-et-conventions.md), le [corpus complémentaire](15-corpus-complementaire.md) et le [guide des fichiers](13-fichiers-et-pipeline.md). Les résultats exécutés sont dans le [bilan courant](14-validation-completion.md).
+
 Le catalogue contient seize indicateurs définis dans `analytics/metrics.py`. Un indicateur décrit son identifiant, son libellé, son unité, les champs nécessaires, sa formule et ses limites. `metric_catalog()` n'expose que ceux autorisés par les modules du compte.
 
 Ces définitions s'appliquent au corpus pédagogique définitif. Leur validation ne dépend pas de fichiers réels ; le test `test_synthetic_reference.py` contrôle les seize calculs sur l'oracle manuel versionné. L'objectif des KPI supplémentaires et des autres analyses du CPS reste dans le [reste à développer](10-perimetre-pedagogique.md).

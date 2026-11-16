@@ -37,7 +37,7 @@ Depuis la racine du dépôt :
 Set-Location C:\Users\OWNEER\onmt-ai
 # Seulement si la venv n’existe pas :
 python -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -r backend\requirements-reporting-models.txt
+.\.venv\Scripts\python.exe -m pip install -r backend\requirements.txt
 $env:PLAYWRIGHT_BROWSERS_PATH = "$PWD\local_data\browsers"
 .\.venv\Scripts\python.exe -m playwright install chromium
 # Téléchargements explicites, sans document utilisateur et sans clé API :

@@ -25,9 +25,9 @@ Le parcours est : PDF → extraction directe ou OCR → passages référencés �
 | `backend/app/reports/templates/report.html` | Applique la langue et le sens de lecture à chaque section : une synthèse arabe peut coexister avec des sections françaises. |
 | `backend/app/reports/demo.py` | Fixe explicitement l’ancien parcours sans IA afin qu’il ne change pas de comportement selon les variables du terminal. |
 | `backend/app/reports/demo_real.py` | Nouveau : fabrique un PDF mixte fictif puis lance OCR, E5, Ollama, révision facultative et export réel. Aucun document officiel ni chiffre réel n’est inventé. |
-| `backend/requirements-reporting.txt` | Déclare explicitement PDFium, utilisé pour le rendu OCR. |
-| `backend/requirements-reporting-models.txt` | Ajoute le runtime C++ Windows local. Les modèles eux-mêmes restent des téléchargements séparés des paquets Python. |
-| `backend/requirements-reporting-tested.lock.txt` | Actualise le relevé des paquets réellement installés dans la venv. |
+| `backend/requirements.txt` | Déclare explicitement PDFium, utilisé pour le rendu OCR. |
+| `backend/requirements.txt` | Ajoute le runtime C++ Windows local. Les modèles eux-mêmes restent des téléchargements séparés des paquets Python. |
+| `backend/requirements-tested.lock.txt` | Actualise le relevé des paquets réellement installés dans la venv. |
 | `backend/tests/conftest.py` | Isole les tests ordinaires des variables d’environnement de l’utilisateur : ils restent clairement sans vrais modèles. |
 | `backend/tests/local_fixtures.py` | Nouveau : construit de faux scans de texte, avec un rendu correct des caractères arabes avant rasterisation. |
 | `backend/tests/test_narrative.py` | Nouveau : teste les contrôles sur chiffres/citations, la conservation des faits, les révisions, les erreurs du service et l’absence de repli silencieux. Ces appels IA sont simulés. |

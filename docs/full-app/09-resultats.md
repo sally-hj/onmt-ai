@@ -1,5 +1,7 @@
 # Bilan d'intégration et résultats observés
 
+> **Version courante :** voir le [bilan du chantier de complétion](14-validation-completion.md) des 15–16 novembre. Les compteurs et durées ci-dessous décrivent les versions antérieures ; la [matrice actuelle](01-couverture-cps.md) indique les fonctionnalités disponibles.
+
 Travaux commencés le 11 novembre 2026, clôture vérifiée le 13 novembre. Branche dédiée : `feature/full-onmt-app`, issue du dernier état Salma `4245369`. Les branches distantes ont été consultées sans être modifiées. Aucun déploiement, Docker, CI/CD, push ou fusion n'est ajouté.
 
 **Actualisation du périmètre, 14 novembre 2026 :** les QVD synthétiques sont désormais les données de référence définitives confirmées par le professeur. Leur remplacement par un patrimoine réel n'est plus une condition de rendu. Les résultats datés ci-dessous restent des preuves d'exécution, pas une validation de toutes les exigences fonctionnelles. La nouvelle [matrice](01-couverture-cps.md) et le [reste à développer](10-perimetre-pedagogique.md) séparent ces sujets.

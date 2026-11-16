@@ -1,5 +1,7 @@
 # De la question à la décision
 
+> Actualisation du 16 novembre : cette page explique le socle d'intégration. Pour les ajouts courants (46 KPI, diagnostics, spécialistes, tâches et présentation), consulter la [matrice](01-couverture-cps.md), les [conventions](12-catalogue-et-conventions.md), le [corpus complémentaire](15-corpus-complementaire.md) et le [guide des fichiers](13-fichiers-et-pipeline.md). Les résultats exécutés sont dans le [bilan courant](14-validation-completion.md).
+
 Les responsables de l'ONMT disposent de données dans Qlik mais une question nouvelle peut demander une intervention BI. L'application propose une autre porte d'entrée : poser une question, vérifier un résultat et ses sources, puis rédiger une synthèse dans le même espace.
 
 Pour le rendu pédagogique, les QVD synthétiques sont les données de référence définitives, conformément à la décision du professeur du 14 novembre 2026. Ce ne sont pas des fichiers provisoires en attente d'un dataset réel. Le connecteur, les calculs, l'OCR, les embeddings et l'inférence restent des traitements à exécuter réellement ; seuls les doubles de tests explicitement identifiés sont simulés.

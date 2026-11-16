@@ -6,6 +6,8 @@ Ce dossier explique le projet en français. Il complète les anciens guides Salm
 
 Ordre conseillé :
 
+Commencer par les ajouts courants : [catalogue des 46 KPI](12-catalogue-et-conventions.md), [chaque fichier et pipeline](13-fichiers-et-pipeline.md), [preuves du chantier](14-validation-completion.md), [corpus complémentaire](15-corpus-complementaire.md) et [architecture](../architecture.md). Les guides suivants expliquent aussi le socle antérieur.
+
 1. [Vue d'ensemble et parcours guidé](02-vue-ensemble.md).
 2. [Couverture du CPS et limites de la cible](01-couverture-cps.md).
 3. [Sources QVD et dictionnaire des données](03-donnees.md).

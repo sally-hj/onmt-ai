@@ -30,7 +30,7 @@ node --version
 npm --version
 # À faire si .venv n’existe pas encore :
 python -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -r backend\requirements-reporting.txt
+.\.venv\Scripts\python.exe -m pip install -r backend\requirements.txt
 $env:PLAYWRIGHT_BROWSERS_PATH = "$PWD\local_data\browsers"
 .\.venv\Scripts\python.exe -m playwright install chromium
 Push-Location frontend
@@ -38,7 +38,7 @@ npm ci
 Pop-Location
 ```
 
-Le sous-ensemble `requirements-reporting.txt` suffit à la démo et aux tests hors vrais modèles. Il évite d’installer les dépendances métier des autres membres. `requirements-reporting-models.txt` ajoute les bibliothèques IA optionnelles. Le fichier `requirements-reporting-tested.lock.txt` est un relevé complet des paquets installés sur ce poste, **pas une certification de leur inférence** : l’import PyTorch est bloqué, voir ci-dessous. `frontend/package-lock.json` fixe la résolution npm.
+Installation courante (16 novembre) : `backend/requirements.txt` est le point d'entrée unique de l'application complète, modèles compris. `requirements-tested.lock.txt` relève sa fermeture transitive vérifiée. Les anciennes listes séparées ont été supprimées. Les constats DLL et d'inférence plus bas décrivent le diagnostic historique ; le [bilan courant](full-app/14-validation-completion.md) distingue les véritables exécutions actuelles. `frontend/package-lock.json` fixe npm.
 
 Terminal 1, backend :
 
@@ -317,7 +317,7 @@ git diff -- backend/requirements.txt
 git add README.md docs/salma-reporting.md docs/salma-test-results.md pytest.ini
 git add backend/app/core/config.py backend/app/core/errors.py backend/app/core/llm_client.py backend/app/core/security.py backend/app/main.py
 git add backend/app/schemas backend/app/reports backend/tests
-git add backend/requirements-reporting.txt backend/requirements-reporting-models.txt backend/requirements-reporting-tested.lock.txt
+git add backend/requirements.txt backend/requirements-tested.lock.txt
 git add examples/contracts frontend
 git diff --cached --stat
 git diff --cached
