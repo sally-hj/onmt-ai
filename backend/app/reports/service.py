@@ -71,8 +71,8 @@ class ReportService:
         section_settings = section_settings or {}
         narratives, sections = {}, []
         if self.writer:
-            if len(facts(analyses)) > 8 or len(evidence) > 3:
-                warnings.append('ai_context_limited_full_analysis_table_in_pdf')
+            if len(facts(analyses)) > 6 or len(evidence) > 2:
+                warnings.append('ai_context_limited_full_snapshots_available_via_analysis_api')
             for section_id in request.sections:
                 section, manifest = self.writer.generate_section(request, section_id, analyses, evidence,section_settings.get(section_id))
                 sections.append(section)

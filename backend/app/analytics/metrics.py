@@ -1,6 +1,11 @@
 """Définitions explicites ; aucune formule envoyée par le LLM n'est exécutée."""
 from dataclasses import asdict, dataclass
 import re
+import json
+from app.core.config import ROOT
+
+TTCI_GROUPS=json.loads((ROOT/'config/ttci2019.json').read_text(encoding='utf-8'))['groups']
+TTCI_FIELDS=[field for group in TTCI_GROUPS for field in group]
 
 
 @dataclass(frozen=True)
@@ -86,7 +91,13 @@ for metric in [
     Metric('employment_share','Part d’emploi touristique','%',{'extension':['tourism_jobs','total_jobs']},'100 * SUM(tourism_jobs) / SUM(total_jobs)','percent'),
     Metric('web_conversion','Conversion des visites web','%',{'extension':['conversions','web_visits']},'100 * SUM(conversions) / SUM(web_visits)','percent'),
     Metric('marketing_visibility','SVM — Engagements pour mille impressions','engagements/1000 impressions',{'extension':['engagements'],'performance':['impressions']},'1000 * SUM(engagements) / SUM(impressions)','per_thousand'),
-    Metric('campaign_roi','IRT — Marge attribuée moins coût, sur coût','%',{'extension':['attributed_margin'],'finance':['spent']},'100 * (SUM(attributed_margin) - SUM(spent)) / SUM(spent)','roi','Attribution imposée par le générateur fictif ; ce scénario ne démontre aucune causalité publicitaire.'),
+    Metric('campaign_roi','IRT — Marge attribuée moins coût, sur coût','%',{'extension_finance':['attributed_margin'],'finance':['spent']},'100 * (SUM(attributed_margin) - SUM(spent)) / SUM(spent)','roi','Attribution imposée par le générateur fictif ; ce scénario ne démontre aucune causalité publicitaire.'),
+    Metric('regional_performance','IPR — Score pédagogique de pilotage territorial','score base 100',{'commercial':['arrivals','seats'],'finance':['spent','budget'],'performance':['clicks','impressions']},
+           '100 * (0.5 * (SUM(arrivals)/SUM(seats))/0.65 + 0.3 * (SUM(spent)/SUM(budget))/0.80 + 0.2 * (SUM(clicks)/SUM(impressions))/0.03)','regional_index',
+           'Poids et cibles pédagogiques : remplissage sièges 65%, exécution 80%, clics 3%. Score descriptif de destination, non homologué et sans effet causal.'),
+    Metric('ttci2019_pedagogical','TTCI 2019 — Agrégation de piliers synthétiques','score 1-7',{'competitiveness':TTCI_FIELDS,'commercial':['arrivals']},
+           'WEIGHTED_MEAN_BY(arrivals, MEAN(MEAN(pillars_1_5), MEAN(pillars_6_9), MEAN(pillars_10_12), MEAN(pillars_13_14)))','ttci',
+           'Agrégation historique TTCI 2019 sur quatorze piliers déjà normalisés fictifs ; adaptation mensuelle/destination pondérée par arrivées. Ni score WEF officiel, ni reconstruction des indicateurs bruts, ni TTDI actuel.'),
 ]:
     METRICS[metric.id] = metric
 
@@ -94,6 +105,7 @@ FIELD_UNITS = {'overnight_stays':'nuitees','arrivals':'arrivees','seats':'sieges
                'rooms_sold':'chambres-nuits','rooms_available':'chambres-nuits','impressions':'impressions','clicks':'clics',
                'conversions':'conversions','event_attendance':'entrees','event_capacity':'places','tourism_jobs':'emplois',
                'total_jobs':'emplois','web_visits':'visites','engagements':'engagements'}
+FIELD_UNITS.update({field:'score_1_7' for field in TTCI_FIELDS})
 
 
 def metric_catalog(access, sources):
@@ -121,6 +133,15 @@ def evaluate(metric, data):
         a,b=term_sum(spec.numerator,data),term_sum(spec.denominator,data)
         if spec.operation=='difference': return round(a-b,4)
         return round(a/b*(100 if spec.operation=='percent' else 1),4) if b else None
+    if metric.kind=='regional_index':
+        totals={(s,f):sum(r[f] for r in rows) for s,rows in data.items() for f in metric.fields[s]}
+        a,b,c,d,e,f=[totals[key] for key in [('commercial','arrivals'),('commercial','seats'),('finance','spent'),('finance','budget'),('performance','clicks'),('performance','impressions')]]
+        return round(100*(.5*(a/b)/.65+.3*(c/d)/.8+.2*(e/f)/.03),4) if b and d and f else None
+    if metric.kind=='ttci':
+        weights={(r['month'],r['destination'],r['market']):r['arrivals'] for r in data['commercial']}
+        denominator=sum(weights.values())
+        numerator=sum(weights[(r['month'],r['destination'],r['market'])]*sum(sum(r[f] for f in group)/len(group) for group in TTCI_GROUPS)/4 for r in data['competitiveness'])
+        return round(numerator/denominator,4) if denominator else None
     rows = data[next(iter(metric.fields))]
     field = metric.fields[next(iter(metric.fields))][0]
     if metric.kind == 'international':

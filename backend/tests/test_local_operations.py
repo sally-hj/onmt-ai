@@ -154,3 +154,23 @@ def test_short_market_followup_reuses_analysis_instead_of_changing_report(action
         assert intent.action=='analyse' and intent.market=='Espagne'
     explicit=ground_intent(Intent(action='update_report'),'Et pour le rapport, ajoute le marché Espagne.',{'markets':['Espagne'],'destinations':['Agadir']},context)
     assert explicit.action=='update_report'
+
+
+def test_kpi_chat_has_an_example_confirmation_and_reuse(app):
+    class Parser(ContextParser):
+        def parse(self,message,context,catalog,language):
+            if message in ['Je confirme','confirmer sans formule']: return Intent(action='kpi_confirm')
+            return super().parse(message,context,catalog,language)
+    app.state.conversations.parser=Parser(); service=app.state.conversations
+    proposal=service.send(json.dumps({'action':'kpi_propose','period':{'start':'2025-02-01','end':'2025-02-28'},'destination':'Agadir',
+        'kpi_definition':{'id':'custom_france_nights','label':'Part des nuitées France','operation':'percent',
+            'numerator':{'source':'commercial','field':'overnight_stays','market':'France'},
+            'denominator':{'source':'commercial','field':'overnight_stays'},'interpretation':'Part des nuitées du marché France dans le total autorisé.'}}),access())
+    assert proposal['kpi_proposal']['example']['value']==32
+    assert not app.state.analytics.custom.list(access())
+    ambiguous=service.send('confirmer sans formule',access(),proposal['conversation_id'],proposal['version'])
+    assert ambiguous['needs_clarification']
+    confirmed=service.send('Je confirme',access(),proposal['conversation_id'],ambiguous['version'])
+    assert confirmed['kpi_definition']['author']=='direction' and confirmed['kpi_definition']['version']==1
+    reused=service.send('{"action":"analyse"}',access(),confirmed['conversation_id'],confirmed['version'])
+    assert reused['analysis']['values']['value']==32 and reused['analysis']['metric_id']=='custom_france_nights'

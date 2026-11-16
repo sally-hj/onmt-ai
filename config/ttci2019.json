@@ -1,0 +1,6 @@
+{
+  "source":"https://www3.weforum.org/docs/WEF_TTCR_2019.pdf",
+  "pages":"85–86, Appendix B",
+  "convention":"Agrégation de quatre sous-indices équipondérés, chacun moyenne de ses piliers. Entrées pédagogiques déjà normalisées, fictives, de 1 à 7. Le périmètre mensuel/destination et la pondération par arrivées sont des adaptations du projet, pas un score WEF officiel ni le TTDI actuel.",
+  "groups":[["business_environment","safety","health","human_resources","ict"],["tourism_priority","openness","price_competitiveness","sustainability"],["air_infrastructure","ground_infrastructure","tourism_services"],["natural_resources","cultural_resources"]]
+}

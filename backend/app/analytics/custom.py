@@ -50,6 +50,8 @@ class CustomKpis:
             if term.field in ['key','month','destination','market'] or term.field not in source['units']:
                 raise AppError('invalid_request','Champ numérique déclaré requis.',422)
             units.append(source['units'][term.field])
+            if source['units'][term.field]=='score_1_7':
+                raise AppError('invalid_request','Les piliers normalisés ne sont pas additifs ; utiliser le calcul TTCI contrôlé avec pondération.',422)
             if term.market:
                 rows,_=self.catalog.read_authorized_data(term.source,['market'],{},access)
                 if term.market not in {r['market'] for r in rows}:
@@ -91,11 +93,12 @@ class CustomKpis:
                 raise AppError('invalid_request','Catalogue personnalisé limité à 64 indicateurs locaux.',422)
             row=db.execute('SELECT MAX(version) FROM custom_kpis WHERE id=?',(spec.id,)).fetchone()
             version=(row[0] or 0)+1
+            if version>32: raise AppError('invalid_request','Limite locale : 32 versions par KPI.',422)
             if version>1:
                 author=db.execute('SELECT author FROM custom_kpis WHERE id=? ORDER BY version DESC LIMIT 1',(spec.id,)).fetchone()[0]
                 if author!=access.user_id: raise forbidden()
             payload={'proposal_id':uuid4().hex,'definition':spec.model_dump(),'unit':unit,'author':access.user_id,'version':version,
-                     'created_at':datetime.now(timezone.utc).isoformat(),'status':'draft','scope':list(access.allowed_territories)}
+                     'created_at':datetime.now(timezone.utc).isoformat(),'status':'draft','scope':list(access.allowed_territories),'synthetic':self.catalog.config['synthetic']}
             db.execute('INSERT INTO custom_kpis VALUES(?,?,?,?,?)',(spec.id,version,access.user_id,'draft',json.dumps(payload,ensure_ascii=False)))
         return payload
 
@@ -106,8 +109,14 @@ class CustomKpis:
             payload=next((json.loads(r[0]) for r in rows if json.loads(r[0])['proposal_id']==proposal_id),None)
             if not payload: raise forbidden()
             self.validate(KpiDefinition.model_validate(payload['definition']),access,write=True)
+            if not set(payload.get('scope',[])).issubset(access.allowed_territories): raise forbidden()
             if not payload.get('example_validated'):
                 raise AppError('invalid_request','Calculer et vérifier un exemple avant confirmation.',422)
+            sources=payload.get('example',{}).get('sources',[])
+            if sources:
+                versions=self.catalog.versions([s['source_id'] for s in sources])
+                if any(versions[s['source_id']]!=s['version'] for s in sources):
+                    raise AppError('source_changed','Sources modifiées depuis l’exemple ; proposer et vérifier un nouvel exemple.',409)
             payload['status']='active'
             db.execute("UPDATE custom_kpis SET status='active',payload=? WHERE id=? AND version=?",(json.dumps(payload,ensure_ascii=False),payload['definition']['id'],payload['version']))
         return payload

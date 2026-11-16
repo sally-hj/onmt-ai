@@ -105,7 +105,8 @@ class Diagnostics:
 
     def destination(self, request, access):
         analysis=self.analytics.run(request.model_copy(update={'metric_id':'overnight_stays','operation':'value','comparison_period':None,'forecast_horizon':None,'forecast_frequency':None}),access)
-        return {'kind':'butler','synthetic':analysis.is_synthetic,'analysis_id':analysis.analysis_id,**butler(analysis.series)}
+        return {'kind':'butler','synthetic':analysis.is_synthetic,'analysis_id':analysis.analysis_id,
+                'warning':'Période partiellement couverte ; aide fondée sur les années complètes disponibles.' if analysis.status!='ok' else 'Aide au diagnostic, pas une identification certaine du cycle de vie.',**butler(analysis.series)}
 
     def map(self,request,access):
         import json

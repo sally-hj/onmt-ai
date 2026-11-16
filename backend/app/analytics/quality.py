@@ -23,6 +23,8 @@ def inspect_rows(rows, source):
             errors.append('invalid_nonnegative_number:' + field)
         if not source.get('units',{}).get(field):
             errors.append('missing_unit:' + field)
+        if source.get('units',{}).get(field)=='score_1_7' and any(isinstance(v,(int,float)) and not 1<=v<=7 for v in values):
+            errors.append('score_out_of_range:'+field)
     for row in rows:
         if isinstance(row.get('rooms_sold'),(int,float)) and isinstance(row.get('rooms_available'),(int,float)):
             if row['rooms_sold'] > row['rooms_available']:

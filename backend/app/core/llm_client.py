@@ -47,12 +47,12 @@ class OllamaPlanner:
                 body = {
                     'model': self.model, 'stream': False, 'keep_alive': '2m', 'format': schema,
                     'raw': True, 'prompt': prompt,
-                    'options': {'temperature': 0, 'num_ctx': self.context, 'num_predict': 900, 'num_thread': 2},
+                    'options': {'temperature': 0, 'num_ctx': self.context, 'num_predict': 512, 'num_thread': 2},
                 }
                 response = client.post('http://127.0.0.1:11434/api/generate', json=body)
                 response.raise_for_status()
                 data = response.json()
-                self.last_metrics = {k: data.get(k) for k in ['prompt_eval_count', 'eval_count', 'total_duration', 'done_reason']}
+                self.last_metrics = {k: data.get(k) for k in ['prompt_eval_count', 'eval_count', 'total_duration', 'load_duration','prompt_eval_duration','eval_duration','done_reason']}
                 self.last_metrics['thinking_characters'] = len(data.get('thinking', ''))
                 if data.get('remote_host') or data.get('remote_model') or data.get('done_reason') == 'length':
                     raise ValueError('Sortie distante ou tronquée')

@@ -136,6 +136,7 @@ class ConversationService:
             if not intent.kpi_definition:
                 response.update(message='Précise le numérateur, le dénominateur, les sources et l’unité souhaitée.',needs_clarification=True)
             else:
+                intent=intent.model_copy(update={'metric_id':intent.kpi_definition.id})
                 request=analysis_request(intent,context)
                 if not request: response.update(message='Précise une période pour vérifier un exemple.',needs_clarification=True)
                 else:
@@ -147,6 +148,7 @@ class ConversationService:
                     proposal=self.analytics.custom.attach_example(proposal,{'value':value,'unit':metric.unit,'formula':metric.source_formula(self.analytics.catalog.sources),
                         'period':request.period.model_dump(mode='json'),'filters':request.filters,'sources':[s.model_dump(mode='json') for s in refs]})
                     context['kpi_proposal_id']=proposal['proposal_id']
+                    context['kpi_example_request']=request.model_dump(mode='json')
                     response.update(message='Vérifie la formule et cet exemple calculé. Confirme explicitement pour enregistrer le KPI.',kpi_proposal=proposal)
         elif intent.action=='kpi_confirm':
             import re
@@ -154,6 +156,7 @@ class ConversationService:
                 response.update(message='Pour enregistrer le brouillon affiché, écris « Je confirme ».',needs_clarification=True)
             else:
                 definition=self.analytics.custom.confirm(context.pop('kpi_proposal_id'),access)
+                context['analysis_request']=context.pop('kpi_example_request',context.get('analysis_request',{}))
                 response.update(message='KPI enregistré et disponible dans le catalogue autorisé.',kpi_definition=definition)
         elif intent.action=='presentation':
             if not context.get('report_id'): response.update(message='Sélectionne ou crée un rapport avant sa présentation.',needs_clarification=True)
@@ -201,9 +204,10 @@ class ConversationService:
             self.analytics.get_analysis(a['analysis_id'],access)
         if result.get('report'): self.reports.get_report(result['report']['report_id'],access)
         if result.get('diagnostic'): self.analytics.products.get(result['diagnostic']['diagnostic_id'],access)
-        if result.get('kpi_proposal'):
-            proposal=result['kpi_proposal']; self.analytics.custom.validate(KpiDefinition.model_validate(proposal['definition']),access)
-            if not set(proposal.get('scope',[])).issubset(access.allowed_territories): raise forbidden()
+        for key in ['kpi_proposal','kpi_definition']:
+            if result.get(key):
+                proposal=result[key]; self.analytics.custom.validate(KpiDefinition.model_validate(proposal['definition']),access)
+                if not set(proposal.get('scope',[])).issubset(access.allowed_territories): raise forbidden()
         for evidence in result.get('evidence',{}).get('evidence',[]):
             for version in [None,evidence['passage']['version']]:
                 doc=self.reports.store.document(evidence['passage']['document_id'],version)

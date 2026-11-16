@@ -8,7 +8,7 @@ from pathlib import Path
 from pyqvd import QvdTable
 
 from app.core.config import ROOT
-from .synthetic import semantic_digest, write_qvd
+from .synthetic import DESTINATIONS, semantic_digest, write_qvd
 
 COMPARATORS = ['Maroc', 'Tunisie', 'Espagne', 'Dubaï', 'Thaïlande', 'Rwanda']
 REGIONS = ['Tanger-Tétouan-Al Hoceima','Oriental','Fès-Meknès','Rabat-Salé-Kénitra',
@@ -54,7 +54,9 @@ def prepare(root):
     directory = root/'supplement'; directory.mkdir(parents=True, exist_ok=True)
     performance = {r['record_key']: r for r in native_rows(root/'performance.qvd')}
     finance = {r['record_key']: r for r in native_rows(root/'finance.qvd')}
-    extension = []
+    extension = []; competitiveness=[]
+    ttci=json.loads((ROOT/'config/ttci2019.json').read_text(encoding='utf-8'))
+    pillars=[f for group in ttci['groups'] for f in group]
     for row in native_rows(root/'commercial.qvd'):
         key=row['record_key']; p=performance[key]; f=finance[key]
         # Les grandeurs macro sont allouées à chaque clé (pas répétées par marché).
@@ -65,6 +67,10 @@ def prepare(root):
             'tourism_jobs':round(row['arrivals']*.08), 'total_jobs':round(row['arrivals']*.8),
             'web_visits':round(p['clicks']*2.5), 'engagements':round(p['impressions']*.06),
             'attributed_margin_mad':round(f['spent_mad']*1.2)})
+        i=DESTINATIONS.index(row['destination'])
+        year,month=map(int,row['period'][:7].split('-'))
+        competitiveness.append({k:row[k] for k in ['record_key','period','destination','market']}|
+            {field:round(3+((i+j)%5)*.5+.1*math.sin(month*math.pi/6)+.02*(year-2021),4) for j,field in enumerate(pillars)})
     international=[]
     for year in range(2021,2027):
         for month in range(1,13 if year<2026 else 11):
@@ -78,10 +84,10 @@ def prepare(root):
                     # Chaque destination a son marché total et son plus grand concurrent fictif.
                     'market_total_arrivals':round(arrivals*(2.5+.15*i)),
                     'competitor_arrivals':round(arrivals/(.7+.15*i))})
-    manifest={'version':'supplement-v1','synthetic':True,'reference_files_unchanged':True,
+    manifest={'version':'supplement-v2','synthetic':True,'reference_files_unchanged':True,
               'convention':'Grandeurs monétaires générées directement en MAD de scénario ; aucune conversion de devises.',
               'files':[ensure_table(directory/'extension.qvd',extension),ensure_table(directory/'international.qvd',international),
-                       ensure_table(directory/'regional.qvd',regional_rows())],
+                       ensure_table(directory/'regional.qvd',regional_rows()),ensure_table(directory/'competitiveness.qvd',competitiveness)],
               'reference_hashes':{n:hashlib.sha256((root/f'{n}.qvd').read_bytes()).hexdigest() for n in ['commercial','finance','performance']}}
     (directory/'manifest.json').write_text(json.dumps(manifest,ensure_ascii=False,indent=2),encoding='utf-8')
     return manifest

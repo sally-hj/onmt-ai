@@ -4,7 +4,9 @@
     {"id":"overnight_stays","fr":"nuitées","en":"overnight stays","es":"pernoctaciones","ar":"الليالي السياحية","ary":"الليالي السياحية","forbidden_ar":["النهارات","إقامة نهارية"]},
     {"id":"arrivals","fr":"arrivées","en":"arrivals","es":"llegadas","ar":"الوافدون","ary":"الوافدين"},
     {"id":"average_stay","fr":"durée moyenne de séjour","en":"average length of stay","es":"estancia media","ar":"متوسط مدة الإقامة","ary":"متوسط مدة الإقامة"},
-    {"id":"budget","fr":"budget prévu","en":"planned budget","es":"presupuesto previsto","ar":"الميزانية المقررة","ary":"الميزانية المقررة"}
+    {"id":"budget","fr":"budget prévu","en":"planned budget","es":"presupuesto previsto","ar":"الميزانية المقررة","ary":"الميزانية المقررة"},
+    {"id":"spent","fr":"dépenses exécutées","en":"actual expenditure","es":"gastos ejecutados","ar":"النفقات المنفذة","ary":"المصاريف المنفذة"},
+    {"id":"click_rate","fr":"taux de clic","en":"click-through rate","es":"tasa de clics","ar":"نسبة النقر","ary":"نسبة النقر"}
   ],
   "allowed_acronyms":["ONMT","OMT","WTTC","WEF","RevPAR","BCG","Butler","MAD","ATI","DMS","ROI","TCA","TCAM","TRP","PMD","DMT","DMN","TTCI","IDT","IPR","SVM","IRT","VR","SFE","ECT","ICME","CGT","ISM"],
   "proper_names":["Agadir","Marrakech","Fès","Tanger","Rabat","Casablanca","France","Espagne","Allemagne","Royaume-Uni","Maroc","Tunisie","Dubaï","Thaïlande","Rwanda"],

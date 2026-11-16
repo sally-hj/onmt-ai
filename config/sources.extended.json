@@ -104,8 +104,7 @@
         "tourism_jobs": "tourism_jobs",
         "total_jobs": "total_jobs",
         "web_visits": "web_visits",
-        "engagements": "engagements",
-        "attributed_margin": "attributed_margin_mad"
+        "engagements": "engagements"
       },
       "units": {
         "conversions": "conversions",
@@ -116,8 +115,73 @@
         "tourism_jobs": "emplois",
         "total_jobs": "emplois",
         "web_visits": "visites",
-        "engagements": "engagements",
+        "engagements": "engagements"
+      }
+    },
+    {
+      "id": "extension_finance",
+      "file": "supplement/extension.qvd",
+      "module": "finance",
+      "grain": [
+        "month",
+        "destination",
+        "market"
+      ],
+      "fields": {
+        "key": "record_key",
+        "month": "period",
+        "destination": "destination",
+        "market": "market",
+        "attributed_margin": "attributed_margin_mad"
+      },
+      "units": {
         "attributed_margin": "MAD"
+      }
+    },
+    {
+      "id": "competitiveness",
+      "file": "supplement/competitiveness.qvd",
+      "module": "performance",
+      "grain": [
+        "month",
+        "destination",
+        "market"
+      ],
+      "fields": {
+        "key": "record_key",
+        "month": "period",
+        "destination": "destination",
+        "market": "market",
+        "business_environment": "business_environment",
+        "safety": "safety",
+        "health": "health",
+        "human_resources": "human_resources",
+        "ict": "ict",
+        "tourism_priority": "tourism_priority",
+        "openness": "openness",
+        "price_competitiveness": "price_competitiveness",
+        "sustainability": "sustainability",
+        "air_infrastructure": "air_infrastructure",
+        "ground_infrastructure": "ground_infrastructure",
+        "tourism_services": "tourism_services",
+        "natural_resources": "natural_resources",
+        "cultural_resources": "cultural_resources"
+      },
+      "units": {
+        "business_environment": "score_1_7",
+        "safety": "score_1_7",
+        "health": "score_1_7",
+        "human_resources": "score_1_7",
+        "ict": "score_1_7",
+        "tourism_priority": "score_1_7",
+        "openness": "score_1_7",
+        "price_competitiveness": "score_1_7",
+        "sustainability": "score_1_7",
+        "air_infrastructure": "score_1_7",
+        "ground_infrastructure": "score_1_7",
+        "tourism_services": "score_1_7",
+        "natural_resources": "score_1_7",
+        "cultural_resources": "score_1_7"
       }
     }
   ],
@@ -145,6 +209,26 @@
     {
       "left": "commercial",
       "right": "extension",
+      "keys": [
+        "month",
+        "destination",
+        "market"
+      ],
+      "cardinality": "one_to_one"
+    },
+    {
+      "left": "commercial",
+      "right": "extension_finance",
+      "keys": [
+        "month",
+        "destination",
+        "market"
+      ],
+      "cardinality": "one_to_one"
+    },
+    {
+      "left": "commercial",
+      "right": "competitiveness",
       "keys": [
         "month",
         "destination",

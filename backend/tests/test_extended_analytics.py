@@ -29,6 +29,7 @@ EXPECTED={
  'tourism_gdp_share':10,'employment_share':20,'web_conversion':5,
  'marketing_visibility':10,'campaign_roi':20,
  'seasonality':None,'annual_growth':None,'annual_cagr':None,
+ 'regional_performance':61.6987,'ttci2019_pedagogical':4.2,
 }
 
 
@@ -51,6 +52,11 @@ def service(tmp_path):
         extension.append({k:r[k] for k in ['record_key','period','destination','market']}|dict(zip(fields,values)))
     (tmp_path/'supplement').mkdir()
     write_qvd(tmp_path/'supplement/extension.qvd',extension)
+    pillars=[f for group in json.loads((ROOT/'config/ttci2019.json').read_text(encoding='utf-8'))['groups'] for f in group]
+    scores=[[1,2,3,4,5,2,2,2,2,3,3,3,4,4],[5,5,5,5,5,5,5,5,5,5,5,5,5,5]]
+    write_qvd(tmp_path/'supplement/competitiveness.qvd',[
+        {k:row[k] for k in ['record_key','period','destination','market']}|dict(zip(pillars,values))
+        for row,values in zip(REFERENCE['sources']['commercial'],scores)])
     return AnalyticsService(Catalog(ROOT/'config/sources.extended.json',tmp_path),AppState(tmp_path/'state'))
 
 
@@ -179,3 +185,15 @@ def test_scenario_is_not_an_observation_and_rejects_ratio(service):
     assert result['baseline']==100 and result['scenario_value']==90 and result['shock_pct']==-10
     assert result['kind']=='scenario' and 'pas une observation' in result['warning']
     with pytest.raises(AppError): Diagnostics(service).scenario(request('occupancy'),access(),5)
+
+
+def test_nonadditive_scores_and_financial_view_cannot_bypass_rights(service):
+    regional=access().model_copy(update={'allowed_modules':['reports','commercial','performance']})
+    spec=KpiDefinition(id='custom_unsafe_margin',label='Marge',operation='ratio',
+        numerator={'source':'extension_finance','field':'attributed_margin'},denominator={'source':'commercial','field':'arrivals'},
+        interpretation='Test de refus des sources financières non autorisées.')
+    with pytest.raises(AppError): service.custom.propose(spec,regional)
+    bad=spec.model_copy(update={'numerator':spec.numerator.model_copy(update={'source':'extension','field':'attributed_margin'})})
+    with pytest.raises(AppError): service.custom.propose(bad,regional)
+    score=spec.model_copy(update={'numerator':spec.numerator.model_copy(update={'source':'competitiveness','field':'safety'})})
+    with pytest.raises(AppError,match='additifs'): service.custom.propose(score,access())
