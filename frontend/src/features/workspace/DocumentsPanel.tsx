@@ -6,7 +6,19 @@ import { request } from './api';
 interface Document {
   document_id: string;
   version: number;
-  metadata: { title: string; language: string };
+  metadata: {
+    title: string;
+    language: string;
+    synthetic?: boolean;
+    kind?: string;
+    context?: string;
+    publisher?: string;
+    issued_on?: string;
+    edition?: string;
+  };
+  index_status?: string;
+  passage_count?: number;
+  shared_library?: boolean;
   warnings: string[];
 }
 export function DocumentsPanel() {
@@ -144,7 +156,24 @@ export function DocumentsPanel() {
                   <strong>{d.metadata.title}</strong>
                   <p>
                     Version {d.version} · {d.metadata.language.toUpperCase()}
+                    {' · '}
+                    {d.shared_library
+                      ? 'Bibliothèque partagée'
+                      : 'Document privé'}
+                    {' · '}
+                    {d.index_status === 'indexed'
+                      ? 'Indexé'
+                      : d.index_status === 'reindex_required'
+                        ? 'Réindexation requise'
+                        : 'État à vérifier'}
                   </p>
+                  <p className="w-muted">
+                    {d.metadata.synthetic ? 'Document synthétique · ' : ''}
+                    {d.metadata.kind} · {d.metadata.publisher} ·{' '}
+                    {d.metadata.issued_on} · édition {d.metadata.edition} ·{' '}
+                    {d.passage_count ?? '—'} passages
+                  </p>
+                  {d.metadata.context && <p>{d.metadata.context}</p>}
                   <a
                     href={`/api/documents/${encodeURIComponent(d.document_id)}/pdf?version=${d.version}`}
                     target="_blank"

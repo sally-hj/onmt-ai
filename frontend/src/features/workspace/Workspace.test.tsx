@@ -153,6 +153,7 @@ describe('Espace intégré', () => {
       'chat_qvd',
       1,
       'fr',
+      expect.any(Function),
     );
     expect(localStorage.getItem('onmt-chat:direction')).toBe('chat_qvd');
     expect(screen.getAllByRole('img')[0]).toHaveAccessibleName(
