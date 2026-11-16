@@ -34,10 +34,23 @@ class ReportService:
             analyses.append(a)
         return analyses
 
-    def create_report(self, request: ReportRequest, access_context, *, report_id=None, base_version=None, section_settings=None) -> ReportResult:
+    def create_report(self, request: ReportRequest, access_context, *, report_id=None, base_version=None, section_settings=None, evidence_result=None) -> ReportResult:
         require_module(access_context, True)
         analyses = self._analyses(request.analysis_ids, access_context)
-        found = self.retriever.search_evidence(request.title, access_context)
+        diagnostics=[]
+        if request.diagnostic_ids:
+            if not hasattr(self.provider,'products'): raise AppError('missing_data','Diagnostics non connectés.',422)
+            diagnostics=[self.provider.products.get(i,access_context) for i in request.diagnostic_ids]
+        from app.schemas.common import SourceReference
+        diagnostic_sources=[SourceReference(source_id=d['source'].get('id','international'),source_type='qvd',name=d['source']['name'],
+            version=d['source']['version'],fields=d['source']['fields'],pages=[]) for d in diagnostics if d.get('source')]
+        for diagnostic in diagnostics:
+            ids=[diagnostic['analysis_id']] if diagnostic.get('analysis_id') else []
+            for point in diagnostic.get('points',[]):
+                ids+=point.get('analysis_ids',[])
+                if point.get('analysis_id'): ids.append(point['analysis_id'])
+            for identifier in ids: diagnostic_sources.extend(self.provider.get_analysis(identifier,access_context).sources)
+        found = evidence_result or self.retriever.search_report(request,analyses,access_context)
         evidence, styles = found.evidence, {}
         if self.planner:
             plan = self.planner.plan(request.language, request.audience, '', evidence)
@@ -50,14 +63,16 @@ class ReportService:
                 warnings.append(f'analysis_sources_absent:{a.analysis_id}')
             if a.status != 'ok':
                 warnings.append(f'analysis_{a.status}:{a.analysis_id}')
-        if any(a.is_synthetic for a in analyses):
+        if any(a.is_synthetic for a in analyses) or any(d['synthetic'] for d in diagnostics):
             warnings.append('synthetic_data')
+        if request.language in ['ar','ary']:
+            warnings.append('Brouillon à relire — validation linguistique humaine arabe/darija non réalisée.')
         report_id = report_id or 'rpt_' + uuid4().hex
         section_settings = section_settings or {}
         narratives, sections = {}, []
         if self.writer:
-            if len(facts(analyses)) > 8 or len(evidence) > 3:
-                warnings.append('ai_context_limited_full_analysis_table_in_pdf')
+            if len(facts(analyses)) > 6 or len(evidence) > 2:
+                warnings.append('ai_context_limited_full_snapshots_available_via_analysis_api')
             for section_id in request.sections:
                 section, manifest = self.writer.generate_section(request, section_id, analyses, evidence,section_settings.get(section_id))
                 sections.append(section)
@@ -68,8 +83,10 @@ class ReportService:
             warnings.append('generation_mode_template_no_llm')
         result = ReportResult(request_id=request.request_id, report_id=report_id, version=(base_version or 0)+1, status='completed',
                               sections=sections,
-                              sources=collect_sources(analyses, evidence), download_path=None,
-                              warnings=sorted(set(warnings)), is_synthetic=any(a.is_synthetic for a in analyses))
+                              sources=collect_sources(analyses, evidence,diagnostic_sources), download_path=None,
+                              warnings=sorted(set(warnings)), is_synthetic=any(a.is_synthetic for a in analyses) or any(d['synthetic'] for d in diagnostics))
+        from .actions import proposals
+        result.proposals=proposals(analyses,request.language)
         verify_report(result, request, analyses, evidence, styles, narratives,section_settings)
         payload = {'result': result.model_dump(mode='json'), 'request': request.model_dump(mode='json'),
                    'policy': private_policy(access_context).model_dump(), 'analyses': [a.model_dump(mode='json') for a in analyses],
@@ -78,6 +95,7 @@ class ReportService:
                    'generation_mode': 'ollama' if self.writer else 'template',
                    'section_versions': {s.section_id: result.version for s in result.sections},
                    'created_at': datetime.now(timezone.utc).isoformat()}
+        payload['diagnostics']=diagnostics
         self.store.save_report(payload,base_version=base_version)
         self.store.audit(access_context.user_id, request.request_id, 'report.create', report_id)
         return result
@@ -104,6 +122,7 @@ class ReportService:
         # Politique locale conservatrice : rapports privés à leur propriétaire.
         if policy.owner_id != access.user_id:
             raise forbidden()
+        for identifier in payload['request'].get('diagnostic_ids',[]): self.provider.products.get(identifier,access)
         # Réévaluer les droits des analyses à chaque lecture, sans remplacer l'instantané historique.
         try:
             self._analyses(payload['request']['analysis_ids'], access)
@@ -169,6 +188,10 @@ class ReportService:
         result.version += 1
         result.request_id = request.request_id
         result.download_path = None
+        from .actions import proposals
+        result.proposals=proposals(analyses,original_request.language)
+        if operation.get('language') in ['ar','ary']:
+            result.warnings.append('Brouillon à relire — validation linguistique humaine arabe/darija non réalisée.')
         narratives = payload.get('narratives', {})
         if self.writer:
             sections = []
@@ -218,3 +241,16 @@ class ReportService:
             raise AppError('missing_data', 'PDF non généré. Lancez l’export.', 404)
         self.store.audit(access_context.user_id, result.request_id, 'report.download', report_id)
         return pdf
+
+    def export_deck(self,report_id,access,version=None):
+        payload=self._authorized(report_id,access,version)
+        result=payload['result']
+        with self.store.connect() as db:
+            row=db.execute('SELECT deck FROM reports WHERE id=? AND version=?',(report_id,result['version'])).fetchone()
+        if row and row[0]: return bytes(row[0])
+        from .presentation import PresentationExporter
+        content=PresentationExporter().render(payload)
+        with self.store.connect() as db:
+            db.execute('UPDATE reports SET deck=? WHERE id=? AND version=?',(content,report_id,result['version']))
+        self.store.audit(access.user_id,result['request_id'],'report.presentation',report_id)
+        return content

@@ -16,6 +16,7 @@ OLLAMA_SHA = '9ca74a7ab66ec86870b1eecac7df160df08dc4e3a291ab5d2d59bcf9310221c6'
 OCR_SHA = 'bee9e3434bd94fd65387d9be28cd467a41f61b1275383b55b0f59a1331270ae4'
 E5_REVISION = '614241f622f53c4eeff9890bdc4f31cfecc418b3'
 QWEN_REVISION = '7dabda4d13d513e3e842b20f0d435c732f172cbe'
+TESSDATA_REVISION = '87416418657359cb625c412a48b6e1d6d41c29bd'
 
 
 def download(url, filename, expected_sha):
@@ -68,11 +69,11 @@ def prepare_ocr():
         subprocess.run([str(installer), '/S', '/currentuser', f'/D={target}'], check=True,
                        creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0)
     with httpx.Client(timeout=90, follow_redirects=True, trust_env=False) as client:
-        revision = client.get('https://api.github.com/repos/tesseract-ocr/tessdata_fast/commits/main')
-        revision.raise_for_status()
-        revision = revision.json()['sha']
+        revision = TESSDATA_REVISION
         data = target / 'tessdata'
         for language in ['fra', 'eng', 'ara']:
+            if (data/f'{language}.traineddata').is_file() and (data/'ONMT_REVISION.txt').is_file() and (data/'ONMT_REVISION.txt').read_text(encoding='ascii').strip()==revision:
+                continue
             response = client.get(f'https://raw.githubusercontent.com/tesseract-ocr/tessdata_fast/{revision}/{language}.traineddata')
             response.raise_for_status()
             (data / f'{language}.traineddata').write_bytes(response.content)
@@ -96,7 +97,7 @@ def prepare_language_model():
     filename = 'qwen2.5-3b-instruct-q4_k_m.gguf'
     hf_hub_download('Qwen/Qwen2.5-3B-Instruct-GGUF', filename, revision=QWEN_REVISION, local_dir=folder)
     (folder / 'ONMT_REVISION.txt').write_text(QWEN_REVISION, encoding='ascii')
-    (folder / 'Modelfile').write_text(f'FROM ./{filename}\nPARAMETER num_ctx 3072\nPARAMETER temperature 0\n', encoding='utf-8')
+    (folder / 'Modelfile').write_text(f'FROM ./{filename}\nPARAMETER num_ctx 4096\nPARAMETER temperature 0\n', encoding='utf-8')
 
 
 if __name__ == '__main__':

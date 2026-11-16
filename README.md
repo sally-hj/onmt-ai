@@ -1,205 +1,173 @@
-# ONMT AI — Intelligent Tourism Analytics Assistant
+# ONMT AI
 
-Projet académique en cours de développement.
+Projet personnel de pilotage touristique conversationnel : explorer des fichiers QVD natifs, calculer des indicateurs, consulter une bibliothèque documentaire et produire des rapports sourcés avec des modèles exécutés localement.
 
-**Décision du professeur, 14 novembre 2026 : les QVD synthétiques sont les données
-de référence définitives du projet pédagogique.** Aucun dataset réel n'est attendu
-pour finaliser le rendu. Configurer d'autres QVD reste une extension facultative.
-Cet accord porte sur les données ; il ne dispense pas des fonctions encore manquantes.
+Les données de référence sont **entièrement synthétiques**. Elles servent à vérifier un logiciel ; elles ne décrivent aucune observation officielle de l’ONMT. Les calculs, l’OCR, les embeddings, l’inférence et les exports du mode normal sont réellement exécutés.
 
-**Application locale intégrée :** [démarrage et démonstration](docs/full-app/08-utilisation.md),
-[guide pédagogique](docs/full-app/README.md), [couverture CPS](docs/full-app/01-couverture-cps.md).
-Le parcours principal relie désormais des QVD synthétiques natifs, les calculs de Doha,
-la conversation de Hayat et les rapports de Salma. Les données sont fictives ; les limites
-et preuves d'exécution figurent dans le [bilan des tests](docs/full-app/09-resultats.md).
-La [matrice actualisée](docs/full-app/01-couverture-cps.md) distingue acquis pédagogiques,
-fonctions à terminer et exigences industrielles. Le [reste à développer](docs/full-app/10-perimetre-pedagogique.md)
-conserve les écarts fonctionnels, indépendamment du choix des données.
+## Fonctionnalités
 
-L’objectif est de créer une application conversationnelle permettant
-d’interroger des données touristiques, de produire des analyses fiables
-et de générer des rapports sourcés pour aider à la décision.
+- Conversation en français, anglais, espagnol, arabe et darija en écriture arabe, avec contexte persistant, clarifications et traces des tâches.
+- Catalogue de **46 KPI distincts**, formules et unités explicites, comparaisons, contrôles de qualité et projections mensuelles. Les horizons longs sont des scénarios mécaniques signalés comme tels.
+- Proposition d’un KPI par conversation : champs autorisés, formule structurée, exemple, confirmation explicite, auteur et versions persistantes. Aucun code produit par le modèle n’est exécuté.
+- BCG concurrentielle, BCG des douze régions, Valeur–Volume, aide Butler, benchmark international fictif sur treize indicateurs, scénarios et cartes ponctuelles.
+- Graphiques interactifs : périodes, séries, info-bulles, navigation clavier et tableaux accessibles.
+- Bibliothèque PDF persistante : extraction textuelle, OCR des scans, E5, ChromaDB, droits avant recherche, pages et versions des citations.
+- Rédaction Qwen, quatre audiences, révisions, propositions liées aux constats, notes PDF structurées en quinze pages et présentations PDF de vingt-cinq diapositives.
+- Comptes locaux, restrictions par module et territoire, documents privés, bibliothèque partagée explicite, tâches persistantes avec étapes et annulation coopérative.
+- Vérifications périodiques locales des sources et alertes, audit avec chaîne d’empreintes vérifiable.
 
-## 1. Fonctionnalités prévues
+La compréhension libre, la profondeur rédactionnelle et la qualité linguistique restent à évaluer au-delà des cas testés. **Arabe et darija : brouillons à relire**, sans validation humaine de publication. Le [bilan](docs/full-app/14-validation-completion.md) distingue les tests simulés des essais réels et la [matrice CPS](docs/full-app/01-couverture-cps.md) conserve les écarts.
 
-- Lecture native des fichiers QVD de Qlik Sense.
-- Compréhension des questions en langage naturel.
-- Gestion du contexte des conversations.
-- Calcul des indicateurs touristiques et comparaisons.
-- Prévisions et détection d’anomalies.
-- Recherche documentaire avec RAG.
-- Génération et modification de rapports sourcés.
-- Export PDF.
-- Contrôle des accès aux données et aux rapports.
+## Architecture et pipeline
 
-Ces fonctionnalités constituent la cible du projet.
-Leur présence dans ce README ne signifie pas qu’elles sont déjà réalisées.
+```mermaid
+flowchart LR
+    U[Question et session] --> J[File locale de tâches]
+    J --> P[Qwen : intention structurée]
+    P --> A[LangGraph : spécialistes et contrôles]
+    A --> Q[QVD natifs / calculs Python]
+    A --> R[Documents autorisés / E5 / Chroma]
+    Q --> V[Constats numériques vérifiés]
+    R --> V
+    V --> G[Qwen : prose contrôlée]
+    G --> D[Rapport versionné / PDF / présentation]
+```
 
-## 2. Répartition de l’équipe
+Le planificateur interprète ; les spécialistes prennent des décisions bornées et utilisent des outils autorisés. Python calcule les chiffres. Le modèle rédige à partir de preuves sélectionnées ; le serveur insère les nombres et citations exacts. Les traces montrent les tâches, outils et sources utilisés.
 
-| Membre | Responsabilités                                                      |
-| ------ | -------------------------------------------------------------------- |
-| Hayat  | Accès QVD, compréhension des questions, conversation et coordination |
-| Doha   | Qualité des données, indicateurs, analyses, prévisions et anomalies  |
-| Salma  | Préparation documentaire, RAG, génération de rapports et export PDF  |
+SQLite conserve l’état applicatif, les versions documentaires et les PDF. Les tables métier restent dans les QVD. Chroma conserve les vecteurs et passages indexés. Voir l’[architecture détaillée](docs/architecture.md).
 
-Chaque membre développe également les routes backend, les écrans
-et les tests associés à son module.
+## Technologies utilisées
 
-## 3. Technologies proposées
+Python 3.11, FastAPI, Pydantic, HTTPX, PyQvd, LangGraph, SQLite, Sentence Transformers, PyTorch CPU, E5 multilingual-small, ChromaDB, pdfplumber, PDFium, Tesseract, Qwen2.5 3B via Ollama, Jinja2, Chromium/Playwright, React, TypeScript et Vite. Les graphiques utilisent SVG ; aucune carte ni police distante n’est chargée.
 
-### Backend commun
+Le **SDK Python Ollama est supprimé** : HTTPX appelle directement le service local. Le **service Ollama** exécute l’inférence ; les **poids GGUF Qwen** sont les paramètres du modèle. Ces trois éléments sont distincts. Un service arrêté, un modèle absent ou une génération refusée produit une erreur explicite.
 
-- Python
-- FastAPI
-- Pydantic
-- SQLite pour l'état applicatif local, sans recopier les tables QVD
+`backend/requirements.txt` est l’unique point d’entrée Python. Le [relevé de versions](backend/requirements-tested.lock.txt) documente la résolution Windows validée, avec ses dépendances transitives. PostgreSQL, psycopg, SQLAlchemy, Alembic, pandas et statsmodels ne sont pas requis par cette implémentation. Scikit-learn et NumPy restent notamment des dépendances des bibliothèques de modèles.
 
-### Conversation et orchestration
+## Données et conventions
 
-- Ollama
-- LangGraph
+La référence conserve ses trois QVD : Finance, Commercial et Performance, **6 300 lignes**, de janvier 2021 à octobre 2026, six destinations et cinq marchés. Les compléments ajoutent des conversions, de l’événementiel, des grandeurs macroéconomiques fictives, des piliers de compétitivité et des comparateurs.
 
-### Données et analyses
+Les noms et coordonnées géographiques sont réels et sourcés ; les indicateurs sont fictifs. Les comparateurs monétaires sont générés directement en MAD de scénario : aucune conversion de devises implicite. Les définitions pédagogiques et les adaptations du TTCI 2019 ne constituent pas une homologation internationale.
 
-- PyQvd
-- Agrégations et prévisions de référence en Python
-- NumPy et bibliothèques de modèles pour les composants qui les utilisent
+Les [règles de données](docs/full-app/03-donnees.md) et le [catalogue détaillé](docs/full-app/12-catalogue-et-conventions.md) décrivent les unités, grains, relations, scénarios et attendus indépendants. Une configuration `ONMT_QVD_ROOT` / `ONMT_SOURCES_CONFIG` permet d’utiliser d’autres QVD ultérieurement ; elle est facultative.
 
-### Recherche documentaire et rapports
+## Prérequis
 
-- pdfplumber
-- Sentence Transformers
-- ChromaDB
-- Jinja2
-- Playwright
+Environnement validé : Windows x64, Python 3.11, Node.js 22 et PowerShell. Le poste de test possède 16 Go de RAM et un Intel i7-7600U à deux cœurs/quatre threads. L’inférence est sur CPU. Prévoir environ 15 à 20 Go disponibles pour les environnements, téléchargements, poids et copies d’import ; le script contrôle une marge minimale de 10 Gio.
 
-### Frontend
+Une connexion Internet est nécessaire à la première installation des paquets, outils et modèles. Leur exécution normale utilise les fichiers locaux. Les licences des modèles et outils restent applicables ; Qwen2.5 3B emploie la licence Qwen Research fournie avec ses poids.
 
-- React
-- TypeScript
+## Première installation
 
-### Tests
+Depuis la racine du dépôt :
 
-- pytest
-- pytest-asyncio
+```powershell
+.\scripts\setup-local.ps1 -DownloadModelsAndTools -PrepareLibrary
+```
 
-Les dépendances intégrées sont fixées dans `backend/requirements-full.txt` ;
-`backend/requirements-full-tested.lock.txt` décrit l'environnement validé.
-`backend/requirements.txt` conserve la proposition initiale : certains outils listés
-(PostgreSQL, pandas, statsmodels) ne sont pas utilisés par l'application actuelle.
+Ce script crée la venv si nécessaire, installe les dépendances Python, Chromium et le frontend, prépare les poids/outils demandés, génère les QVD s’ils sont absents, puis les compléments et la bibliothèque. Il conserve les QVD de référence déjà présents et les imports privés. La préparation de la bibliothèque est idempotente et publie uniquement son corpus synthétique réservé.
 
-## 4. Organisation du dépôt
+Les téléchargements de modèles et de Tesseract sont séparés des requirements. Pour les lancer individuellement :
 
-- backend/app/main.py : point d’entrée de l’application FastAPI.
-- backend/app/core/ : configuration, sécurité et composants communs.
-- backend/app/schemas/ : contrats Pydantic partagés.
-- backend/app/data_access/ : lecteur QVD et catalogue des sources.
-- backend/app/conversation/ : module de Hayat.
-- backend/app/analytics/ : module de Doha.
-- backend/app/reports/ : module de Salma.
-- backend/tests/ : tests unitaires, d’intégration et de contrats.
-- frontend/src/ : interface utilisateur.
-- docs/ : architecture et contrats d’échange.
-- examples/contracts/ : exemples JSON synthétiques.
-- local_data/ : données locales exclues de Git.
+```powershell
+.\.venv\Scripts\python.exe scripts\prepare-local-ai.py --components ollama ocr embeddings llm
+$env:PLAYWRIGHT_BROWSERS_PATH = "$PWD\local_data\browsers"
+.\.venv\Scripts\python.exe -m playwright install chromium
+```
 
-## 5. Pipeline général
+Démarrer ensuite Ollama dans le terminal 1, puis importer Qwen **une seule fois** dans un autre terminal :
 
-1. L’utilisateur pose une question.
-2. Le backend vérifie son identité et ses permissions.
-3. Hayat transforme la question en demande structurée.
-4. Doha récupère les données autorisées et réalise les calculs.
-5. Hayat affiche les résultats et leurs sources.
-6. Si un rapport est demandé, Salma récupère les analyses autorisées.
-7. Salma recherche les documents pertinents, rédige et vérifie le rapport.
-8. Le rapport est proposé à la consultation et à l’export PDF.
+```powershell
+.\local_data\tools\ollama\ollama.exe create onmt-qwen25:3b -f local_data\models\qwen25-3b-gguf\Modelfile
+```
 
-## 6. Contrats d’échange
+Pour préparer uniquement les données ou réindexer le corpus après installation :
 
-Le document docs/contracts.md définit les échanges communs :
+```powershell
+$env:PYTHONPATH = "$PWD\backend"
+# Uniquement si les trois QVD de référence n’existent pas encore :
+.\.venv\Scripts\python.exe -m app.data_access.synthetic
+.\.venv\Scripts\python.exe -m app.data_access.supplement
+.\.venv\Scripts\python.exe -m app.reports.library --confirm-shared-library
+```
 
-- AnalysisRequest
-- AnalysisResult
-- SourceReference
-- ReportRequest
-- ReportResult
-- ReportRevisionRequest
-- ErrorResponse
-- AccessContext
+La génération de données crée des fichiers fictifs. L’installation copie des logiciels et des poids. L’indexation calcule et conserve des embeddings. L’inférence utilise les poids existants. **L’indexation n’est pas un entraînement ; aucun fine-tuning n’est réalisé.**
 
-Toute modification incompatible doit être discutée avec les membres
-concernées et accompagnée d’une mise à jour des exemples et des tests.
+## Démarrages suivants : trois terminaux
 
-## 7. Organisation Git
+Terminal 1 :
 
-- main : base commune et fonctionnalités intégrées.
-- setup/project-foundation : préparation initiale du projet.
-- hayat/conversation : travail de Hayat.
-- doha/analytics : travail de Doha.
-- salma/reporting-rag : travail de Salma.
-- feature/full-onmt-app : intégration locale des trois modules.
+```powershell
+.\scripts\start-local-ollama.ps1
+```
 
-Les branches individuelles sont créées après la fusion de la base commune.
+Terminal 2 :
 
-Chaque membre travaille sur sa branche et propose ses changements
-par une Pull Request vers main.
+```powershell
+.\scripts\start-full-app.ps1
+```
 
-## 8. Données et confidentialité
+Terminal 3 :
 
-Ne pas ajouter au dépôt :
+```powershell
+cd frontend
+npm run dev
+```
 
-- Les fichiers QVD réels ou confidentiels.
-- Les documents internes non autorisés.
-- Les rapports sensibles.
-- Les clés API et mots de passe.
-- Les fichiers .env.
-- Les modèles téléchargés et les index locaux.
+Interface : [http://127.0.0.1:5173](http://127.0.0.1:5173). Documentation API : [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs).
 
-Utiliser les données synthétiques comme référence définitive du projet pédagogique.
-Le [dictionnaire](docs/full-app/03-donnees.md) décrit la génération et les relations.
-L'[oracle manuel](examples/synthetic-reference.json) contient les résultats attendus
-indépendants du moteur de calcul.
+Comptes de démonstration : `direction` et `regional`, mot de passe initial `OnmtLocal!2026`. Le second est limité à Agadir/Marrakech et ne dispose pas du module Finance. `ONMT_LOCAL_PASSWORD` permet de choisir le mot de passe avant la création initiale des comptes.
 
-Les résultats fictifs doivent être explicitement identifiés.
-Une donnée absente ne doit jamais être remplacée par une invention.
+La surveillance et la file de tâches s’exécutent dans le processus API : aucun quatrième terminal n’est nécessaire. `ONMT_MONITOR_INTERVAL` règle l’intervalle, 60 secondes par défaut dans le script, 0 pour désactiver. Ctrl+C arrête chaque service. Une annulation de tâche attend la prochaine étape ; une inférence déjà commencée peut aller jusqu’à son délai maximal.
 
-## 9. Développement parallèle
+## Exemples de questions
 
-Les modules peuvent être développés indépendamment en respectant
-les contrats communs.
+1. « Compare les nuitées à Agadir en février 2025 et février 2024. » Attendu : 80 000 contre 100 000, soit −20 %.
+2. « Et pour Marrakech ? » Attendu : 165 000 contre 150 000, soit +10 %.
+3. « Montre le budget à Agadir en février 2025. »
+4. « Fais une matrice Valeur–Volume pour Agadir en février 2025. »
+5. « Compare les destinations internationales en février 2025 et février 2024. »
+6. « Crée un KPI part des nuitées France : nuitées France divisées par toutes les nuitées, fois cent, à Agadir en février 2025. » Vérifier le brouillon et son exemple, puis confirmer explicitement.
+7. « Prépare une note structurée pour la direction. »
+8. « Traduis la synthèse en arabe. »
+9. « Prépare la présentation de vingt-cinq diapositives. »
 
-Lorsque les autres modules ne sont pas encore disponibles,
-utiliser des adaptateurs de test et des résultats synthétiques.
+Une formulation ambiguë demande une précision. Le panneau Diagnostics permet aussi de régler explicitement les périodes et seuils. Un [parcours complet expliqué](docs/full-app/13-fichiers-et-pipeline.md) relie question, calculs, documents, rapport et présentation.
 
-Les trois modules sont intégrés sur les QVD synthétiques natifs. Les preuves d'exécution
-des calculs et modèles locaux sont distinguées des tests à clients simulés.
+## Tests et évaluation
 
-## 10. État actuel et lancement
+```powershell
+.\.venv\Scripts\python.exe -m pytest -q -m "not local_ai and not models and not full_models and not browser"
+Push-Location frontend
+npm test
+npm run build
+Pop-Location
+```
 
-L'application complète se lance avec `scripts/start-full-app.ps1`, Ollama dans un
-autre terminal et `npm run dev` dans `frontend`. Elle propose une connexion locale,
-un chat principal, des calculs QVD, des graphiques, des documents et des rapports PDF.
-Les comptes et les commandes exactes sont dans le guide de démarrage ci-dessus.
+Essais réels supplémentaires, avec modèles/outils préparés :
 
-Les commandes Salma ci-dessous décrivent le sous-module historique et son mode
-de démonstration à fixtures isolées. Elles ne remplacent pas le démarrage intégré.
+```powershell
+$env:PYTHONPATH = "$PWD\backend"
+$env:ONMT_TEST_COMPLETION_REAL = '1'
+.\.venv\Scripts\python.exe -m pytest backend\tests\test_cps_real.py -q --basetemp=local_data/cps-completion-results/pytest-real
+$env:ONMT_TEST_PRESENTATION = '1'
+.\.venv\Scripts\python.exe -m pytest backend\tests\test_presentations.py -q
+.\.venv\Scripts\python.exe scripts\evaluate-cps-languages.py
+.\.venv\Scripts\python.exe scripts\measure-local.py --repetitions 3
+# Appels réels, sans autre client d'inférence en parallèle :
+.\.venv\Scripts\python.exe scripts\measure-models.py
+```
 
-Voir [docs/salma-reporting.md](docs/salma-reporting.md) pour les commandes PowerShell,
-les résultats des tests, les points d’intégration et les limites des modèles locaux.
+Les oracles de calcul sont écrits indépendamment du moteur. Les tests ordinaires utilisent des interpréteurs simulés pour certains parcours ; les essais E5/OCR/Ollama sont explicitement identifiés. Les jeux linguistiques de développement et d’évaluation sont séparés et versionnés. Voir le [bilan daté avec commandes, commits et environnement](docs/full-app/14-validation-completion.md).
 
-La mise à jour des modèles locaux, de l’OCR et des révisions est décrite dans
-[docs/salma-local-ai.md](docs/salma-local-ai.md). Ce guide historique précède l'intégration :
-le fournisseur de Doha calcule maintenant depuis les QVD synthétiques de référence,
-qui ne doivent pas être remplacés avant le rendu.
+## Performances et limites
 
-## 11. Périmètre actuel
+Les mesures sont rapportées par étape, avec leur matériel, leur cache et leurs répétitions dans le bilan. Les rapports sur ce CPU peuvent demander plusieurs minutes. Une réussite isolée, les résultats historiques de novembre ou le temps d’un outil seul ne démontrent aucun SLA du CPS.
 
-Développement de l’application uniquement.
+Sur le poste testé, le benchmark numérique prend environ 0,04–0,08 s. Une même interprétation Qwen prend 145 s après déchargement du modèle, puis 24–25 s à chaud ; la chaîne à quatre KPI et six sections, avec OCR/recherche/exports et révision arabe, a réussi en 489,82 s. Ces mesures ont des périmètres différents ; voir les répétitions et conditions dans le [bilan](docs/full-app/14-validation-completion.md).
 
-Le volet données est conforme au choix pédagogique confirmé. La couverture fonctionnelle
-reste partielle : les KPI supplémentaires, fonctions analytiques avancées, longues
-conversations et rapports élaborés restent à développer ou explicitement arbitrer.
+Butler est une aide heuristique pouvant rester indéterminée. Les scénarios et projections longues ne sont pas des observations ni des effets économiques démontrés. La rédaction et les recommandations demandent une relecture ; aucune validation linguistique humaine générale n’est revendiquée.
 
-Les choix de déploiement seront définis séparément selon
-les consignes du professeur.
+L’application cible un poste local et un seul processus API. SSO d’entreprise, chiffrement industriel, stockage d’audit immuable externe, certification, charge à cinquante utilisateurs, voix et streaming de texte LLM restent des écarts de la cible industrielle ou des fonctions à compléter selon la matrice. Aucun déploiement cloud, Docker ou CI/CD n’est inclus.

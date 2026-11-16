@@ -1759,3 +1759,67 @@ legend {
     transform: none;
   }
 }
+.w-diagnostic-chart {
+  width: 100%;
+  min-width: 540px;
+  max-height: 420px;
+  min-height: 200px;
+  background: #f7f5ed;
+}
+.w-diagnostic-form fieldset {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 24px;
+}
+.w-diagnostic-form fieldset > p,
+.w-diagnostic-form fieldset > button {
+  grid-column: 1 / -1;
+}
+@media (max-width: 600px) {
+  .w-diagnostic-form fieldset {
+    grid-template-columns: 1fr;
+  }
+}
+.w-table-scroll {
+  max-width: 100%;
+  overflow: auto;
+  margin: 18px 0;
+}
+.w-table-scroll table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 13px;
+}
+.w-table-scroll th,
+.w-table-scroll td {
+  padding: 12px;
+  text-align: start;
+  border-bottom: 1px solid #d8e1da;
+}
+.w-report-actions a {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+}
+.w-chart-filters {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.w-chart-filters label {
+  font-size: 12px;
+}
+.w-chart-filters input,
+.w-chart-filters select {
+  width: 100%;
+  min-width: 0;
+}
+@media (max-width: 600px) {
+  .w-chart-filters {
+    grid-template-columns: 1fr;
+  }
+  .w-diagnostic-chart {
+    min-height: 160px;
+  }
+}

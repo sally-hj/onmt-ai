@@ -62,6 +62,12 @@ TEXT = {
     },
 }
 SECTION_IDS = ['summary', 'diagnostic', 'comparison', 'forecast', 'recommendations', 'limitations']
+for language,label in {'fr':'Audience internationale : définitions, unités et comparabilité explicites.',
+    'en':'International audience: explicit definitions, units and comparability.',
+    'es':'Audiencia internacional: definiciones, unidades y comparabilidad explícitas.',
+    'ar':'للهيئات الدولية: تعريفات ووحدات ونطاقات مقارنة واضحة.',
+    'ary':'للهيئات الدولية: التعريفات والوحدات والمقارنة واضحين.'}.items():
+    TEXT[language]['audiences']['international']=label
 
 
 def number(value, unavailable):

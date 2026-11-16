@@ -12,8 +12,8 @@ def next_month(value, offset=1):
 
 
 def forecast(series, horizon):
-    if horizon > 12 or len(series) < 36 or any(p.value is None for p in series):
-        raise AppError('missing_data','Prévision : 36 mois complets requis et horizon maximal de 12 mois.',422)
+    if horizon > 60 or horizon<1 or len(series) < 36 or any(p.value is None for p in series):
+        raise AppError('missing_data','Projection : 36 mois complets requis et horizon maximal de 60 mois.',422)
     if any(next_month(a.date) != b.date for a,b in zip(series,series[1:])):
         raise AppError('missing_data','Historique discontinu : prévision refusée.',422)
     train, test = series[:-12],series[-12:]
@@ -26,12 +26,15 @@ def forecast(series, horizon):
     rmse = math.sqrt(sum(x*x for x in errors)/12)
     points = []
     for step in range(horizon):
-        value = series[-12+step].value if seasonal else series[-1].value
+        value = series[-12+step%12].value if seasonal else series[-1].value
         # Bande empirique des erreurs hors entraînement ; aucune couverture probabiliste garantie.
-        points.append(SeriesPoint(date=next_month(series[-1].date,step+1),value=value,kind='forecast',
-                                  lower=max(0,value-1.96*rmse),upper=value+1.96*rmse))
+        width=1.96*rmse*math.sqrt(1+step//12)
+        lower=value-width
+        if all(p.value>=0 for p in series): lower=max(0,lower)
+        points.append(SeriesPoint(date=next_month(series[-1].date,step+1),value=value,kind='forecast',lower=lower,upper=value+width))
     warnings = [f'forecast_method:{"seasonal_naive" if seasonal else "last_value"}',
                 f'holdout_12_months_mae_naive:{mae_naive:.4f}',f'holdout_12_months_mae_seasonal:{mae_seasonal:.4f}',
                 f'holdout_rmse:{rmse:.4f}','forecast_interval_empirical_no_guaranteed_coverage',
                 'forecast_no_causal_explanation_or_exogenous_variables']
+    if horizon>12: warnings.append('long_horizon_mechanical_scenario_not_calibrated_for_2030')
     return points,warnings

@@ -1,0 +1,14 @@
+{
+  "source": "Wikidata, propriété P625 ; positions urbaines indicatives, consultées le 2026-11-15",
+  "license": "CC0 pour les données structurées Wikidata",
+  "projection": "équirectangulaire locale ; points seuls, aucune frontière administrative",
+  "network_at_runtime": false,
+  "points": [
+    {"destination":"Agadir","latitude":30.421389,"longitude":-9.583056,"source":"https://www.wikidata.org/wiki/Q170525"},
+    {"destination":"Marrakech","latitude":31.629469,"longitude":-7.981081,"source":"https://www.wikidata.org/wiki/Q101625"},
+    {"destination":"Fès","latitude":34.043333,"longitude":-5.003333,"source":"https://www.wikidata.org/wiki/Q80985"},
+    {"destination":"Tanger","latitude":35.769491,"longitude":-5.804468,"source":"https://www.wikidata.org/wiki/Q126148"},
+    {"destination":"Rabat","latitude":34.021111,"longitude":-6.841389,"source":"https://www.wikidata.org/wiki/Q3551"},
+    {"destination":"Casablanca","latitude":33.599167,"longitude":-7.62,"source":"https://www.wikidata.org/wiki/Q7903"}
+  ]
+}

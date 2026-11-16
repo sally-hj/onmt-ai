@@ -21,6 +21,7 @@ td,th { border-bottom:1px solid #ccdcd6; padding:7px; text-align:start; overflow
 {% if report.is_synthetic %}<p class="warning">{{ t.synthetic }}</p>{% endif %}
 <ol>{% for s in report.sections %}<li>{{ s.title }}</li>{% endfor %}</ol></div>
 {% for s in report.sections %}{% set sl = payload.get('section_settings', {}).get(s.section_id, {}).get('language', request.language) %}<section lang="{{ sl }}" dir="{{ 'rtl' if sl in ['ar', 'ary'] else 'ltr' }}"><h2>{{ s.title }}</h2><pre>{{ s.content }}</pre></section>{% endfor %}
+{% if report.get('proposals') %}<section><h2>{{ t.titles[4] }}</h2>{% for proposal in report.get('proposals', []) %}<p>{{ proposal.proposal }} {{ proposal.validation }}</p><p class="ref">{{ proposal.analysis_id }} · {{ proposal.condition }} · {{ proposal.observed_value }} {{ proposal.unit }}</p>{% endfor %}</section>{% endif %}
 <section><h2>{{ t.observed }} / {{ t.forecast }}</h2>
 <table><thead><tr><th>{{ t.columns[0] }}</th><th>{{ t.columns[1] }}</th><th>Key</th><th>{{ t.columns[2] }}</th><th>{{ t.columns[3] }}</th></tr></thead>
 <tbody>{% for r in rows %}<tr><td dir="ltr">{{ r.analysis_id }} / {{ r.metric_id }}</td><td dir="ltr">{{ r.date }} / {{ r.kind }}</td><td dir="ltr">{{ r.key }}</td><td><bdi dir="{{ 'auto' if r.value is none else 'ltr' }}">{{ t.unavailable if r.value is none else r.value }}</bdi></td><td dir="ltr">{{ r.unit }}</td></tr>{% endfor %}</tbody></table>

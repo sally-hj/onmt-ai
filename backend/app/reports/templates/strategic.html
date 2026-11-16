@@ -1,0 +1,11 @@
+<!doctype html><html lang="{{ payload.request.language }}" dir="{{ 'rtl' if rtl else 'ltr' }}"><meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'">
+<style>@page{size:A4;margin:0}*{box-sizing:border-box}body{margin:0;font:11pt Arial;color:#18352e;line-height:1.5}
+.sheet{width:210mm;height:297mm;padding:18mm;position:relative;break-after:page}.sheet:last-child{break-after:auto}h1{font-size:23pt;border-bottom:2px solid #226556;padding-bottom:8px}
+p{overflow-wrap:anywhere;unicode-bidi:plaintext}table{font-size:9pt;width:100%;border-collapse:collapse}td,th{padding:7px;border-bottom:1px solid #ccdcd6;text-align:start}
+.banner{font-size:9pt;color:#a34b33}.footer{position:absolute;bottom:10mm;left:18mm;right:18mm;font-size:9pt;border-top:1px solid #acc7bd}svg{width:100%;height:220px;direction:ltr}
+</style><body>{% for page in pages %}<article class="sheet"><p class="banner">ONMT AI · {% if payload.result.is_synthetic %}{{ t.synthetic }}{% endif %} · {{ payload.result.report_id }} v{{ payload.result.version }}</p><h1>{{ page.title }}</h1>
+{% for paragraph in page.paragraphs %}<p>{{ paragraph }}</p>{% endfor %}
+{% if page.rows %}<table><thead><tr><th>KPI</th><th>Date</th><th>{{ t.forecast }}</th><th>Lower</th><th>Upper</th><th>Unit</th></tr></thead><tbody>{% for row in page.rows %}<tr>{% for cell in row %}<td><bdi dir="ltr">{{ cell }}</bdi></td>{% endfor %}</tr>{% endfor %}</tbody></table>{% endif %}
+{% for plot in page.plots %}<h2 dir="ltr">{{ plot.metric }} · {{ plot.unit }}</h2><svg viewBox="0 0 650 190"><path d="M25 15V155H635" fill="none" stroke="#71897e"/>{% for point in plot.points %}<circle cx="{{ point.x }}" cy="{{ point.y }}" r="2.5" fill="#226556"><title>{{ point.date }} : {{ point.value }}</title></circle>{% endfor %}<text x="30" y="180" font-size="11">{{ plot.points[0].date }}</text><text x="530" y="180" font-size="11">{{ plot.points[-1].date }}</text></svg>{% endfor %}
+<div class="footer">{{ loop.index }} / 15 · {{ payload.request.audience }}</div></article>{% endfor %}</body></html>

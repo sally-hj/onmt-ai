@@ -2,6 +2,10 @@
 
 Version : 0.1
 
+Extension compatible du 16 novembre 2026 : les contrats exécutables Pydantic restent la référence. `ReportRequest` accepte maintenant `question`, `layout` (`standard`/`strategic_15`), `diagnostic_ids` et l'audience `international`. Les résultats peuvent contenir des propositions d'actions sourcées. Les diagnostics, propositions de KPI et tâches ont leurs routes propres ; aucune propriété de l'ancien contrat n'est supprimée.
+
+Les actions conversationnelles supplémentaires couvrent briefing coordonné, diagnostics, proposition/confirmation de KPI et présentation. Une confirmation de KPI est explicite ; `append_analyses` permet de conserver les analyses précédentes lors d'un ajout au rapport. Les prévisions mensuelles sont bornées à 60 mois. Les tâches renvoient état/étape/erreur et résultat autorisé, jamais un pourcentage inventé. Voir [l'architecture courante](architecture.md) et [le guide de chaque fichier](full-app/13-fichiers-et-pipeline.md).
+
 Périmètre de données confirmé le 14 novembre 2026 : les QVD synthétiques sont la référence
 définitive du rendu pédagogique. Leur emploi n'implique pas des traitements simulés.
 Les résultats et exports conservent `is_synthetic: true` et un marquage visible ;

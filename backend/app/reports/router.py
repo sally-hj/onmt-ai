@@ -7,6 +7,7 @@ from app.core.errors import AppError, forbidden
 from app.core.security import authorize, can_read, demo_access, require_module
 from app.schemas.common import AccessContext, Contract
 from app.schemas.report import ReportRequest, ReportResult, ReportRevisionRequest
+from typing import Literal
 from .documents import DocumentMetadata, DocumentRecord, EvidenceResult
 
 router = APIRouter(prefix='/api', tags=['Salma — rapports et documents'])
@@ -31,6 +32,38 @@ Access = Annotated[AccessContext, Depends(get_access_context)]
 class SearchRequest(Contract):
     question: str = Field(min_length=1, max_length=2000)
     limit: int = Field(default=5, ge=1, le=20)
+
+
+class ReportJob(Contract):
+    kind: Literal['create','revise','export','presentation']
+    idempotency_key: str = Field(min_length=8,max_length=100)
+    create: ReportRequest | None = None
+    revision: ReportRevisionRequest | None = None
+    report_id: str | None = None
+    version: int | None = Field(default=None,gt=0)
+
+
+@router.post('/reports/jobs',status_code=202)
+def report_job(body: ReportJob,request: Request,access: Access):
+    if not hasattr(request.app.state,'jobs'): raise AppError('tool_failed','Tâches disponibles dans le mode complet.',503)
+    if body.kind=='create' and body.create is None: raise AppError('invalid_request','Demande de rapport requise.',422)
+    if body.kind=='revise' and body.revision is None: raise AppError('invalid_request','Demande de révision requise.',422)
+    if body.kind in ['export','presentation'] and not body.report_id: raise AppError('invalid_request','Rapport requis.',422)
+    def work():
+        from app.schemas.common import AccessContext
+        with request.app.state.application_state.connect() as db:
+            row=db.execute('SELECT access FROM users WHERE username=?',(access.user_id,)).fetchone()
+        if not row: raise forbidden()
+        current=AccessContext.model_validate_json(row[0]); service=request.app.state.reports
+        if body.kind=='create': result=service.create_report(body.create,current)
+        elif body.kind=='revise': result=service.revise_report(body.revision,current)
+        elif body.kind=='export': result=service.export_pdf(body.report_id,current,request.app.state.exporter,body.version)
+        else:
+            service.export_deck(body.report_id,current,body.version)
+            result=service.get_report(body.report_id,current,body.version)
+        return {'message':'Traitement du rapport terminé.','report':result.model_dump(mode='json'),
+                'deck_path':f'/api/reports/{result.report_id}/deck?version={result.version}' if body.kind=='presentation' else None}
+    return request.app.state.jobs.submit(access.user_id,body.idempotency_key,body.model_dump(mode='json'),work)
 
 
 @router.get('/reports/config')
@@ -77,6 +110,12 @@ def download(report_id: str, request: Request, access: Access, version: int | No
                                                                'Cache-Control': 'no-store'})
 
 
+@router.get('/reports/{report_id}/deck')
+def deck(report_id: str,request: Request,access: Access,version: int | None=Query(default=None,gt=0),inline: bool=False):
+    content=request.app.state.reports.export_deck(report_id,access,version)
+    return Response(content,media_type='application/pdf',headers={'Content-Disposition':('inline' if inline else 'attachment')+'; filename="presentation-25-slides.pdf"'})
+
+
 @router.post('/documents/search', response_model=EvidenceResult)
 def search(body: SearchRequest, request: Request, access: Access):
     return request.app.state.retriever.search_evidence(body.question, access, body.limit)
@@ -93,7 +132,9 @@ def documents(request: Request, access: Access):
     for raw in request.app.state.store.documents():
         doc = DocumentRecord.model_validate(raw)
         if can_read(doc.policy, access):
-            result.append(doc.model_dump(exclude={'passages', 'policy', 'sha256'}))
+            result.append({**doc.model_dump(exclude={'passages', 'policy', 'sha256'}),
+                'passage_count':len(doc.passages),'shared_library':doc.policy.shared_library,
+                'index_status':'indexed' if doc.index_identity==request.app.state.retriever.index.embedder.identity else 'reindex_required'})
     return result
 
 
@@ -117,6 +158,8 @@ def upload(request: Request, access: Access, file: Annotated[UploadFile, File()]
         parsed = DocumentMetadata.model_validate_json(metadata)
     except ValueError as exc:
         raise AppError('invalid_request', 'Métadonnées documentaires invalides.', 422) from exc
+    if parsed.corpus_id is not None:
+        raise AppError('invalid_request','Identifiant de bibliothèque réservé à la commande de préparation.',422)
     content = file.file.read(request.app.state.settings.max_pdf_bytes + 1)
     doc, duplicate = request.app.state.documents.ingest_pdf(content, parsed, access, document_id)
     return {'document': doc.model_dump(exclude={'passages', 'policy', 'sha256'}), 'duplicate': duplicate}

@@ -7,12 +7,8 @@
 | `config/sources.synthetic.json` | Mapping central des trois QVD : fichiers relatifs, domaines, noms physiques/logiques, unités, grain et relations. `Catalog` le lit au démarrage. Exemple : `overnight_stays` correspond à `nights`. |
 | `examples/synthetic-reference.json` | Oracle manuel versionné : ancrages du corpus et six lignes indépendantes avec valeurs/unités attendues pour les seize KPI. Il n'est pas réécrit par le générateur ou le moteur analytique. |
 | `config/dimension-aliases.json` | Synonymes linguistiques de destinations/marchés. `slots.py` les utilise pour vérifier que les filtres sont demandés, sans accorder d'autorisation. |
-| `backend/requirements-full.txt` | Dépendances directes de l'intégration : inclut les modèles/rapports puis fixe PyQvd et LangGraph. Utilisé par pip, pas importé par Python. |
-| `backend/requirements-full-tested.lock.txt` | Relevé des versions installées pendant la validation complète ; ne nécessite pas une explication ligne par ligne. N'inclut pas les poids de modèles ni Tesseract. |
-| `backend/requirements-reporting-models.txt` | Dépendances Salma avec Sentence Transformers, torch, client Ollama et runtime Windows ; conservées. |
-| `backend/requirements-reporting.txt` | Dépendances légères Salma/API/test/PDF, avec PDFium pour le rendu OCR ; conservées. |
-| `backend/requirements-reporting-tested.lock.txt` | Ancien relevé de validation Salma ; il n'est pas présenté comme le relevé des nouveaux paquets QVD/LangGraph. |
-| `backend/requirements.txt` | Proposition initiale commune, non verrouillée. Certaines bibliothèques listées ne sont pas nécessaires à l'implémentation locale, notamment PostgreSQL et pandas. |
+| `backend/requirements.txt` | Point d'entrée unique : dépendances directes épinglées et commentées par usage pour toute l'application. Le SDK Ollama inutilisé a été retiré ; HTTPX appelle toujours le véritable service Ollama. |
+| `backend/requirements-tested.lock.txt` | Unique relevé supplémentaire : fermeture transitive des dépendances directes dans l'environnement Windows testé, produite par `scripts/lock-requirements.py`. Les outils externes et poids restent à préparer séparément. |
 | `examples/reporting.env.example` | Variables historiques de modèles/OCR/chemins sans secret ; documentation, pas chargement automatique. Les nouvelles variables d'intégration sont décrites dans le guide d'utilisation. |
 | `examples/full-app.env.example` | Variables du mode intégré, des QVD et du stockage local. Ne contient aucun secret et n'est pas chargé automatiquement ; le script de démarrage prépare l'environnement. |
 | `examples/contracts/*.json` | Objets synthétiques démontrant les contrats communs. Les tests Salma les utilisent ; l'application complète calcule ses analyses depuis les QVD. |
@@ -24,7 +20,7 @@
 | `frontend/src/test-setup.ts` | Configure les assertions DOM des tests React. |
 | `pytest.ini` | Répertoire des tests, chemin d'import backend et catégories opt-in : browser, models, local_ai, full_models. |
 | `.gitignore` | Exclut données locales, index, modèles, environnements et résultats de compilation. Vérifier avant un commit de données. |
-| `AGENTS.md` / `docs/architecture.md` | Emplacements initiaux vides au diagnostic. L'architecture réelle est documentée dans le présent dossier. |
+| `AGENTS.md` / `docs/architecture.md` | Les instructions locales sont vides ; l'architecture décrit maintenant le pipeline, les stockages et les limites réelles. |
 | `README.md` / `docs/contracts.md` | Index de démarrage et contrats de référence. Les ajouts d'API intégrée sont documentés sans supprimer les champs des échanges Salma. |
 
 ## Scripts

@@ -119,3 +119,33 @@ def test_untrusted_document_injection_is_only_quoted(application,access,request_
     assert 'Extrait documentaire cité comme donnée de contexte' in summary
     assert '80000 nuitees' in summary
     assert '999999' not in next(s.content for s in report.sections if s.section_id=='recommendations')
+def test_contextual_search_filters_rights_and_dates_before_ranking(application,access):
+    from app.reports.documents import DocumentMetadata
+    from app.schemas.common import Period
+    from conftest import text_pdf
+    service=application.state.documents
+    def add(title,text,kind='destination',year=2025,owner=access):
+        period=None if year is None else Period(start=f'{year}-01-01',end=f'{year}-12-31')
+        return service.ingest_pdf(text_pdf([text]),DocumentMetadata(title=title,language='fr',synthetic=True,kind=kind,period=period),owner)[0]
+    method=add('Method','Nuitees definition methodologique.','methodology',2030)
+    general=add('General','Contexte touristique general.','other',None)
+    increase=add('Increase','Les nuitees sont en hausse dans ce document fictif.')
+    decrease=add('Decrease','Les nuitees sont en baisse dans ce document fictif.')
+    irrelevant=add('Unrelated','Documentation technique sans lien avec la demande.')
+    excluded_date=add('Future','Campagne fictive de la prochaine annee.',year=2026)
+    excluded_private=add('Private','Note privee inaccessible.',owner=access.model_copy(update={'user_id':'other'}))
+    candidates=[]
+    class ControlledIndex:
+        embedder=application.state.retriever.index.embedder
+        def query(self,question,versions,limit):
+            candidates.extend(versions)
+            return [(doc.passages[0].chunk_id,0.9 if doc is irrelevant else 0.01)
+                    for doc in [method,general,increase,decrease,irrelevant]]
+    application.state.retriever.index=ControlledIndex()
+    found=application.state.retriever.search_evidence('Nuitees Agadir en fevrier 2025',access,limit=10)
+    ids={e.passage.document_id for e in found.evidence}
+    assert ids=={method.document_id,general.document_id,increase.document_id,decrease.document_id}
+    assert f'{excluded_date.document_id}:1' not in candidates
+    assert f'{excluded_private.document_id}:1' not in candidates
+    assert 'potentially_conflicting_documentary_claims_review_required' in found.warnings
+

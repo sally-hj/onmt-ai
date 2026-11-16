@@ -10,6 +10,8 @@ from .errors import AppError
 class AppState:
     def __init__(self, directory: Path):
         directory.mkdir(parents=True,exist_ok=True)
+        from .audit import AuditLog
+        self.audit_log=AuditLog(directory)
         self.path = directory/'application.sqlite3'
         with self.connect() as db:
             db.executescript('''

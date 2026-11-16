@@ -1,0 +1,240 @@
+{
+  "label": "Corpus synthétique de référence pédagogique ONMT AI — aucune donnée officielle",
+  "synthetic": true,
+  "sources": [
+    {
+      "id": "commercial",
+      "file": "commercial.qvd",
+      "module": "commercial",
+      "grain": [
+        "month",
+        "destination",
+        "market"
+      ],
+      "fields": {
+        "key": "record_key",
+        "month": "period",
+        "destination": "destination",
+        "market": "market",
+        "overnight_stays": "nights",
+        "arrivals": "arrivals",
+        "seats": "seats",
+        "bookings": "bookings"
+      },
+      "units": {
+        "overnight_stays": "nuitees",
+        "arrivals": "arrivees",
+        "seats": "sieges",
+        "bookings": "reservations"
+      }
+    },
+    {
+      "id": "finance",
+      "file": "finance.qvd",
+      "module": "finance",
+      "grain": [
+        "month",
+        "destination",
+        "market"
+      ],
+      "fields": {
+        "key": "record_key",
+        "month": "period",
+        "destination": "destination",
+        "market": "market",
+        "budget": "budget_mad",
+        "spent": "spent_mad",
+        "committed": "committed_mad"
+      },
+      "units": {
+        "budget": "MAD",
+        "spent": "MAD",
+        "committed": "MAD"
+      }
+    },
+    {
+      "id": "performance",
+      "file": "performance.qvd",
+      "module": "performance",
+      "grain": [
+        "month",
+        "destination",
+        "market"
+      ],
+      "fields": {
+        "key": "record_key",
+        "month": "period",
+        "destination": "destination",
+        "market": "market",
+        "room_revenue": "room_revenue_mad",
+        "rooms_sold": "room_nights_sold",
+        "rooms_available": "room_nights_available",
+        "travel_receipts": "travel_receipts_mad",
+        "impressions": "impressions",
+        "clicks": "clicks"
+      },
+      "units": {
+        "room_revenue": "MAD",
+        "rooms_sold": "chambres-nuits",
+        "rooms_available": "chambres-nuits",
+        "travel_receipts": "MAD",
+        "impressions": "impressions",
+        "clicks": "clics"
+      }
+    },
+    {
+      "id": "extension",
+      "file": "supplement/extension.qvd",
+      "module": "performance",
+      "grain": [
+        "month",
+        "destination",
+        "market"
+      ],
+      "fields": {
+        "key": "record_key",
+        "month": "period",
+        "destination": "destination",
+        "market": "market",
+        "conversions": "conversions",
+        "event_attendance": "event_attendance",
+        "event_capacity": "event_capacity",
+        "tourism_gva": "tourism_gva_mad",
+        "gdp": "gdp_mad",
+        "tourism_jobs": "tourism_jobs",
+        "total_jobs": "total_jobs",
+        "web_visits": "web_visits",
+        "engagements": "engagements"
+      },
+      "units": {
+        "conversions": "conversions",
+        "event_attendance": "entrees",
+        "event_capacity": "places",
+        "tourism_gva": "MAD",
+        "gdp": "MAD",
+        "tourism_jobs": "emplois",
+        "total_jobs": "emplois",
+        "web_visits": "visites",
+        "engagements": "engagements"
+      }
+    },
+    {
+      "id": "extension_finance",
+      "file": "supplement/extension.qvd",
+      "module": "finance",
+      "grain": [
+        "month",
+        "destination",
+        "market"
+      ],
+      "fields": {
+        "key": "record_key",
+        "month": "period",
+        "destination": "destination",
+        "market": "market",
+        "attributed_margin": "attributed_margin_mad"
+      },
+      "units": {
+        "attributed_margin": "MAD"
+      }
+    },
+    {
+      "id": "competitiveness",
+      "file": "supplement/competitiveness.qvd",
+      "module": "performance",
+      "grain": [
+        "month",
+        "destination",
+        "market"
+      ],
+      "fields": {
+        "key": "record_key",
+        "month": "period",
+        "destination": "destination",
+        "market": "market",
+        "business_environment": "business_environment",
+        "safety": "safety",
+        "health": "health",
+        "human_resources": "human_resources",
+        "ict": "ict",
+        "tourism_priority": "tourism_priority",
+        "openness": "openness",
+        "price_competitiveness": "price_competitiveness",
+        "sustainability": "sustainability",
+        "air_infrastructure": "air_infrastructure",
+        "ground_infrastructure": "ground_infrastructure",
+        "tourism_services": "tourism_services",
+        "natural_resources": "natural_resources",
+        "cultural_resources": "cultural_resources"
+      },
+      "units": {
+        "business_environment": "score_1_7",
+        "safety": "score_1_7",
+        "health": "score_1_7",
+        "human_resources": "score_1_7",
+        "ict": "score_1_7",
+        "tourism_priority": "score_1_7",
+        "openness": "score_1_7",
+        "price_competitiveness": "score_1_7",
+        "sustainability": "score_1_7",
+        "air_infrastructure": "score_1_7",
+        "ground_infrastructure": "score_1_7",
+        "tourism_services": "score_1_7",
+        "natural_resources": "score_1_7",
+        "cultural_resources": "score_1_7"
+      }
+    }
+  ],
+  "relations": [
+    {
+      "left": "commercial",
+      "right": "finance",
+      "keys": [
+        "month",
+        "destination",
+        "market"
+      ],
+      "cardinality": "one_to_one"
+    },
+    {
+      "left": "commercial",
+      "right": "performance",
+      "keys": [
+        "month",
+        "destination",
+        "market"
+      ],
+      "cardinality": "one_to_one"
+    },
+    {
+      "left": "commercial",
+      "right": "extension",
+      "keys": [
+        "month",
+        "destination",
+        "market"
+      ],
+      "cardinality": "one_to_one"
+    },
+    {
+      "left": "commercial",
+      "right": "extension_finance",
+      "keys": [
+        "month",
+        "destination",
+        "market"
+      ],
+      "cardinality": "one_to_one"
+    },
+    {
+      "left": "commercial",
+      "right": "competitiveness",
+      "keys": [
+        "month",
+        "destination",
+        "market"
+      ],
+      "cardinality": "one_to_one"
+    }
+  ]
+}

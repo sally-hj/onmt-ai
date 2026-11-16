@@ -8,19 +8,20 @@ os.environ.setdefault('PLAYWRIGHT_BROWSERS_PATH', str(ROOT / 'local_data' / 'bro
 
 @dataclass(frozen=True)
 class Settings:
+    monitor_interval: float = field(default_factory=lambda: float(os.getenv('ONMT_MONITOR_INTERVAL','0')))
     full_app: bool = field(default_factory=lambda: os.getenv('ONMT_FULL_APP', '0') == '1')
     sources_config: Path = field(default_factory=lambda: Path(os.getenv('ONMT_SOURCES_CONFIG',str(ROOT/'config/sources.synthetic.json'))))
     qvd_root: Path = field(default_factory=lambda: Path(os.getenv('ONMT_QVD_ROOT',str(ROOT/'local_data/qvd-synthetic'))))
     data_dir: Path = field(default_factory=lambda: Path(os.getenv('ONMT_DATA_DIR', str(ROOT / 'local_data' / 'reporting'))))
     demo: bool = field(default_factory=lambda: os.getenv('ONMT_DEMO', '0') == '1')
     embedding_model: str = field(default_factory=lambda: os.getenv('ONMT_EMBEDDING_MODEL', str(ROOT / 'local_data' / 'models' / 'multilingual-e5-small')))
-    embedding_revision: str = field(default_factory=lambda: os.getenv('ONMT_EMBEDDING_REVISION', 'local-v1'))
+    embedding_revision: str = field(default_factory=lambda: os.getenv('ONMT_EMBEDDING_REVISION', '614241f622f53c4eeff9890bdc4f31cfecc418b3'))
     demo_embeddings: bool = field(default_factory=lambda: os.getenv('ONMT_DEMO_EMBEDDINGS', '0') == '1')
     max_distance: float = field(default_factory=lambda: float(os.getenv('ONMT_MAX_DISTANCE', '0.24')))
     ollama_model: str = field(default_factory=lambda: os.getenv('ONMT_OLLAMA_MODEL', ''))
     generation_mode: str = field(default_factory=lambda: os.getenv('ONMT_GENERATION_MODE', 'auto'))
     ollama_timeout: float = field(default_factory=lambda: float(os.getenv('ONMT_OLLAMA_TIMEOUT', '240')))
-    ollama_context: int = field(default_factory=lambda: int(os.getenv('ONMT_OLLAMA_CONTEXT', '3072')))
+    ollama_context: int = field(default_factory=lambda: int(os.getenv('ONMT_OLLAMA_CONTEXT', '4096')))
     ocr_enabled: bool = field(default_factory=lambda: os.getenv('ONMT_OCR', '0') == '1')
     tesseract_path: str = field(default_factory=lambda: os.getenv('ONMT_TESSERACT', str(ROOT / 'local_data/tools/tesseract/tesseract.exe')))
     tessdata_path: str = field(default_factory=lambda: os.getenv('ONMT_TESSDATA', str(ROOT / 'local_data/tools/tesseract/tessdata')))
@@ -30,6 +31,8 @@ class Settings:
     max_pages: int = 200
 
     def __post_init__(self):
+        if self.monitor_interval != 0 and self.monitor_interval < 5:
+            raise ValueError('Intervalle de surveillance : 0 pour désactiver ou au moins 5 secondes.')
         if self.demo_embeddings and not self.demo:
             raise ValueError('Les embeddings de démonstration exigent ONMT_DEMO=1')
         if self.generation_mode not in ['auto', 'template', 'ollama']:

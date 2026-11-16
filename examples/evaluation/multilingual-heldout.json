@@ -1,0 +1,1058 @@
+{
+  "version": "1",
+  "split": "evaluation",
+  "latin_darija": "Non évaluée ; écriture arabe retenue.",
+  "human_review": "Non réalisée ; brouillon à relire.",
+  "cases": [
+    {
+      "id": "heldout-fr-1",
+      "language": "fr",
+      "task": "analysis",
+      "message": "Donne les arrivées à Marrakech en mars 2025.",
+      "context": {},
+      "expected": {
+        "action": "analyse",
+        "metric_id": "arrivals",
+        "destination": "Marrakech",
+        "period.start": "2025-03-01"
+      }
+    },
+    {
+      "id": "heldout-fr-2",
+      "language": "fr",
+      "task": "analysis",
+      "message": "Combien de nuitées à Agadir en avril 2024 ?",
+      "context": {},
+      "expected": {
+        "action": "analyse",
+        "metric_id": "overnight_stays",
+        "destination": "Agadir",
+        "period.start": "2024-04-01"
+      }
+    },
+    {
+      "id": "heldout-fr-3",
+      "language": "fr",
+      "task": "followup",
+      "message": "Et pour le marché espagnol ?",
+      "context": {
+        "analysis_request": {
+          "metric_id": "overnight_stays",
+          "operation": "compare",
+          "period": {
+            "start": "2025-02-01",
+            "end": "2025-02-28"
+          },
+          "comparison_period": {
+            "start": "2024-02-01",
+            "end": "2024-02-29"
+          },
+          "filters": {
+            "destination": "Agadir"
+          }
+        },
+        "report_id": "evaluation_report",
+        "report_version": 1
+      },
+      "expected": {
+        "action": "analyse",
+        "market": "Espagne"
+      }
+    },
+    {
+      "id": "heldout-fr-4",
+      "language": "fr",
+      "task": "ambiguity",
+      "message": "Quel est le ROI ?",
+      "context": {},
+      "expected": {
+        "action": "clarify"
+      }
+    },
+    {
+      "id": "heldout-fr-5",
+      "language": "fr",
+      "task": "revision",
+      "message": "Traduis le résumé en anglais.",
+      "context": {
+        "analysis_request": {
+          "metric_id": "overnight_stays",
+          "operation": "compare",
+          "period": {
+            "start": "2025-02-01",
+            "end": "2025-02-28"
+          },
+          "comparison_period": {
+            "start": "2024-02-01",
+            "end": "2024-02-29"
+          },
+          "filters": {
+            "destination": "Agadir"
+          }
+        },
+        "report_id": "evaluation_report",
+        "report_version": 1
+      },
+      "expected": {
+        "action": "revise",
+        "instruction": "langue:en"
+      }
+    },
+    {
+      "id": "heldout-fr-6",
+      "language": "fr",
+      "task": "diagnostic",
+      "message": "Prépare une matrice Valeur–Volume en février 2025.",
+      "context": {},
+      "expected": {
+        "action": "diagnostic",
+        "diagnostic_kind": "value_volume"
+      }
+    },
+    {
+      "id": "heldout-en-1",
+      "language": "en",
+      "task": "analysis",
+      "message": "Show arrivals in Marrakech during March 2025.",
+      "context": {},
+      "expected": {
+        "action": "analyse",
+        "metric_id": "arrivals",
+        "destination": "Marrakech",
+        "period.start": "2025-03-01"
+      }
+    },
+    {
+      "id": "heldout-en-2",
+      "language": "en",
+      "task": "analysis",
+      "message": "How many overnight stays in Agadir in April 2024?",
+      "context": {},
+      "expected": {
+        "action": "analyse",
+        "metric_id": "overnight_stays",
+        "destination": "Agadir",
+        "period.start": "2024-04-01"
+      }
+    },
+    {
+      "id": "heldout-en-3",
+      "language": "en",
+      "task": "followup",
+      "message": "And for the Spanish source market?",
+      "context": {
+        "analysis_request": {
+          "metric_id": "overnight_stays",
+          "operation": "compare",
+          "period": {
+            "start": "2025-02-01",
+            "end": "2025-02-28"
+          },
+          "comparison_period": {
+            "start": "2024-02-01",
+            "end": "2024-02-29"
+          },
+          "filters": {
+            "destination": "Agadir"
+          }
+        },
+        "report_id": "evaluation_report",
+        "report_version": 1
+      },
+      "expected": {
+        "action": "analyse",
+        "market": "Espagne"
+      }
+    },
+    {
+      "id": "heldout-en-4",
+      "language": "en",
+      "task": "ambiguity",
+      "message": "What is the ROI?",
+      "context": {},
+      "expected": {
+        "action": "clarify"
+      }
+    },
+    {
+      "id": "heldout-en-5",
+      "language": "en",
+      "task": "revision",
+      "message": "Translate the summary into Spanish.",
+      "context": {
+        "analysis_request": {
+          "metric_id": "overnight_stays",
+          "operation": "compare",
+          "period": {
+            "start": "2025-02-01",
+            "end": "2025-02-28"
+          },
+          "comparison_period": {
+            "start": "2024-02-01",
+            "end": "2024-02-29"
+          },
+          "filters": {
+            "destination": "Agadir"
+          }
+        },
+        "report_id": "evaluation_report",
+        "report_version": 1
+      },
+      "expected": {
+        "action": "revise",
+        "instruction": "langue:es"
+      }
+    },
+    {
+      "id": "heldout-en-6",
+      "language": "en",
+      "task": "diagnostic",
+      "message": "Create a Value–Volume matrix for February 2025.",
+      "context": {},
+      "expected": {
+        "action": "diagnostic",
+        "diagnostic_kind": "value_volume"
+      }
+    },
+    {
+      "id": "heldout-es-1",
+      "language": "es",
+      "task": "analysis",
+      "message": "Muestra las llegadas a Marrakech durante marzo 2025.",
+      "context": {},
+      "expected": {
+        "action": "analyse",
+        "metric_id": "arrivals",
+        "destination": "Marrakech",
+        "period.start": "2025-03-01"
+      }
+    },
+    {
+      "id": "heldout-es-2",
+      "language": "es",
+      "task": "analysis",
+      "message": "¿Cuántas pernoctaciones hubo en Agadir en abril 2024?",
+      "context": {},
+      "expected": {
+        "action": "analyse",
+        "metric_id": "overnight_stays",
+        "destination": "Agadir",
+        "period.start": "2024-04-01"
+      }
+    },
+    {
+      "id": "heldout-es-3",
+      "language": "es",
+      "task": "followup",
+      "message": "¿Y para el mercado español?",
+      "context": {
+        "analysis_request": {
+          "metric_id": "overnight_stays",
+          "operation": "compare",
+          "period": {
+            "start": "2025-02-01",
+            "end": "2025-02-28"
+          },
+          "comparison_period": {
+            "start": "2024-02-01",
+            "end": "2024-02-29"
+          },
+          "filters": {
+            "destination": "Agadir"
+          }
+        },
+        "report_id": "evaluation_report",
+        "report_version": 1
+      },
+      "expected": {
+        "action": "analyse",
+        "market": "Espagne"
+      }
+    },
+    {
+      "id": "heldout-es-4",
+      "language": "es",
+      "task": "ambiguity",
+      "message": "¿Cuál es el ROI?",
+      "context": {},
+      "expected": {
+        "action": "clarify"
+      }
+    },
+    {
+      "id": "heldout-es-5",
+      "language": "es",
+      "task": "revision",
+      "message": "Traduce el resumen al francés.",
+      "context": {
+        "analysis_request": {
+          "metric_id": "overnight_stays",
+          "operation": "compare",
+          "period": {
+            "start": "2025-02-01",
+            "end": "2025-02-28"
+          },
+          "comparison_period": {
+            "start": "2024-02-01",
+            "end": "2024-02-29"
+          },
+          "filters": {
+            "destination": "Agadir"
+          }
+        },
+        "report_id": "evaluation_report",
+        "report_version": 1
+      },
+      "expected": {
+        "action": "revise",
+        "instruction": "langue:fr"
+      }
+    },
+    {
+      "id": "heldout-es-6",
+      "language": "es",
+      "task": "diagnostic",
+      "message": "Crea una matriz Valor–Volumen para febrero 2025.",
+      "context": {},
+      "expected": {
+        "action": "diagnostic",
+        "diagnostic_kind": "value_volume"
+      }
+    },
+    {
+      "id": "heldout-ar-1",
+      "language": "ar",
+      "task": "analysis",
+      "message": "اعرض الوافدين إلى مراكش في مارس ٢٠٢٥.",
+      "context": {},
+      "expected": {
+        "action": "analyse",
+        "metric_id": "arrivals",
+        "destination": "Marrakech",
+        "period.start": "2025-03-01"
+      }
+    },
+    {
+      "id": "heldout-ar-2",
+      "language": "ar",
+      "task": "analysis",
+      "message": "كم عدد الليالي السياحية في أكادير خلال أبريل ٢٠٢٤؟",
+      "context": {},
+      "expected": {
+        "action": "analyse",
+        "metric_id": "overnight_stays",
+        "destination": "Agadir",
+        "period.start": "2024-04-01"
+      }
+    },
+    {
+      "id": "heldout-ar-3",
+      "language": "ar",
+      "task": "followup",
+      "message": "وماذا عن السوق الإسبانية؟",
+      "context": {
+        "analysis_request": {
+          "metric_id": "overnight_stays",
+          "operation": "compare",
+          "period": {
+            "start": "2025-02-01",
+            "end": "2025-02-28"
+          },
+          "comparison_period": {
+            "start": "2024-02-01",
+            "end": "2024-02-29"
+          },
+          "filters": {
+            "destination": "Agadir"
+          }
+        },
+        "report_id": "evaluation_report",
+        "report_version": 1
+      },
+      "expected": {
+        "action": "analyse",
+        "market": "Espagne"
+      }
+    },
+    {
+      "id": "heldout-ar-4",
+      "language": "ar",
+      "task": "ambiguity",
+      "message": "ما هو العائد على الاستثمار؟",
+      "context": {},
+      "expected": {
+        "action": "clarify"
+      }
+    },
+    {
+      "id": "heldout-ar-5",
+      "language": "ar",
+      "task": "revision",
+      "message": "ترجم الملخص إلى الفرنسية.",
+      "context": {
+        "analysis_request": {
+          "metric_id": "overnight_stays",
+          "operation": "compare",
+          "period": {
+            "start": "2025-02-01",
+            "end": "2025-02-28"
+          },
+          "comparison_period": {
+            "start": "2024-02-01",
+            "end": "2024-02-29"
+          },
+          "filters": {
+            "destination": "Agadir"
+          }
+        },
+        "report_id": "evaluation_report",
+        "report_version": 1
+      },
+      "expected": {
+        "action": "revise",
+        "instruction": "langue:fr"
+      }
+    },
+    {
+      "id": "heldout-ar-6",
+      "language": "ar",
+      "task": "diagnostic",
+      "message": "أنشئ مصفوفة القيمة والحجم لشهر فبراير ٢٠٢٥.",
+      "context": {},
+      "expected": {
+        "action": "diagnostic",
+        "diagnostic_kind": "value_volume"
+      }
+    },
+    {
+      "id": "heldout-ary-1",
+      "language": "ary",
+      "task": "analysis",
+      "message": "عطيني الوافدين لمراكش فمارس 2025.",
+      "context": {},
+      "expected": {
+        "action": "analyse",
+        "metric_id": "arrivals",
+        "destination": "Marrakech",
+        "period.start": "2025-03-01"
+      }
+    },
+    {
+      "id": "heldout-ary-2",
+      "language": "ary",
+      "task": "analysis",
+      "message": "شحال من ليلة سياحية فأكادير فأبريل 2024؟",
+      "context": {},
+      "expected": {
+        "action": "analyse",
+        "metric_id": "overnight_stays",
+        "destination": "Agadir",
+        "period.start": "2024-04-01"
+      }
+    },
+    {
+      "id": "heldout-ary-3",
+      "language": "ary",
+      "task": "followup",
+      "message": "ودابا السوق ديال إسبانيا؟",
+      "context": {
+        "analysis_request": {
+          "metric_id": "overnight_stays",
+          "operation": "compare",
+          "period": {
+            "start": "2025-02-01",
+            "end": "2025-02-28"
+          },
+          "comparison_period": {
+            "start": "2024-02-01",
+            "end": "2024-02-29"
+          },
+          "filters": {
+            "destination": "Agadir"
+          }
+        },
+        "report_id": "evaluation_report",
+        "report_version": 1
+      },
+      "expected": {
+        "action": "analyse",
+        "market": "Espagne"
+      }
+    },
+    {
+      "id": "heldout-ary-4",
+      "language": "ary",
+      "task": "ambiguity",
+      "message": "شحال هو الربح ديال الحملة؟",
+      "context": {},
+      "expected": {
+        "action": "clarify"
+      }
+    },
+    {
+      "id": "heldout-ary-5",
+      "language": "ary",
+      "task": "revision",
+      "message": "ترجم ليا الخلاصة للإنجليزية.",
+      "context": {
+        "analysis_request": {
+          "metric_id": "overnight_stays",
+          "operation": "compare",
+          "period": {
+            "start": "2025-02-01",
+            "end": "2025-02-28"
+          },
+          "comparison_period": {
+            "start": "2024-02-01",
+            "end": "2024-02-29"
+          },
+          "filters": {
+            "destination": "Agadir"
+          }
+        },
+        "report_id": "evaluation_report",
+        "report_version": 1
+      },
+      "expected": {
+        "action": "revise",
+        "instruction": "langue:en"
+      }
+    },
+    {
+      "id": "heldout-ary-6",
+      "language": "ary",
+      "task": "diagnostic",
+      "message": "بغيت مصفوفة القيمة والحجم ففبراير 2025.",
+      "context": {},
+      "expected": {
+        "action": "diagnostic",
+        "diagnostic_kind": "value_volume"
+      }
+    },
+    {
+      "id": "heldout-fr-7",
+      "language": "fr",
+      "task": "analysis",
+      "message": "Pour mars 2025, quelles sont les arrivées de Marrakech ?",
+      "context": {},
+      "expected": {
+        "action": "analyse",
+        "metric_id": "arrivals",
+        "destination": "Marrakech",
+        "period.start": "2025-03-01"
+      }
+    },
+    {
+      "id": "heldout-fr-8",
+      "language": "fr",
+      "task": "analysis",
+      "message": "À Agadir, affiche les nuitées du mois d’avril 2024.",
+      "context": {},
+      "expected": {
+        "action": "analyse",
+        "metric_id": "overnight_stays",
+        "destination": "Agadir",
+        "period.start": "2024-04-01"
+      }
+    },
+    {
+      "id": "heldout-fr-9",
+      "language": "fr",
+      "task": "followup",
+      "message": "Conserve la période et passe au marché Espagne.",
+      "context": {
+        "analysis_request": {
+          "metric_id": "overnight_stays",
+          "operation": "compare",
+          "period": {
+            "start": "2025-02-01",
+            "end": "2025-02-28"
+          },
+          "comparison_period": {
+            "start": "2024-02-01",
+            "end": "2024-02-29"
+          },
+          "filters": {
+            "destination": "Agadir"
+          }
+        },
+        "report_id": "evaluation_report",
+        "report_version": 1
+      },
+      "expected": {
+        "action": "analyse",
+        "market": "Espagne"
+      }
+    },
+    {
+      "id": "heldout-fr-10",
+      "language": "fr",
+      "task": "ambiguity",
+      "message": "Compare la performance sans indicateur défini.",
+      "context": {},
+      "expected": {
+        "action": "clarify"
+      }
+    },
+    {
+      "id": "heldout-fr-11",
+      "language": "fr",
+      "task": "revision",
+      "message": "Je souhaite le résumé en anglais.",
+      "context": {
+        "analysis_request": {
+          "metric_id": "overnight_stays",
+          "operation": "compare",
+          "period": {
+            "start": "2025-02-01",
+            "end": "2025-02-28"
+          },
+          "comparison_period": {
+            "start": "2024-02-01",
+            "end": "2024-02-29"
+          },
+          "filters": {
+            "destination": "Agadir"
+          }
+        },
+        "report_id": "evaluation_report",
+        "report_version": 1
+      },
+      "expected": {
+        "action": "revise",
+        "instruction": "langue:en"
+      }
+    },
+    {
+      "id": "heldout-fr-12",
+      "language": "fr",
+      "task": "diagnostic",
+      "message": "Analyse les marchés sur une matrice valeur-volume, février 2025.",
+      "context": {},
+      "expected": {
+        "action": "diagnostic",
+        "diagnostic_kind": "value_volume"
+      }
+    },
+    {
+      "id": "heldout-en-7",
+      "language": "en",
+      "task": "analysis",
+      "message": "What are the arrivals for Marrakech for March 2025?",
+      "context": {},
+      "expected": {
+        "action": "analyse",
+        "metric_id": "arrivals",
+        "destination": "Marrakech",
+        "period.start": "2025-03-01"
+      }
+    },
+    {
+      "id": "heldout-en-8",
+      "language": "en",
+      "task": "analysis",
+      "message": "For April 2024, give overnight stays for Agadir.",
+      "context": {},
+      "expected": {
+        "action": "analyse",
+        "metric_id": "overnight_stays",
+        "destination": "Agadir",
+        "period.start": "2024-04-01"
+      }
+    },
+    {
+      "id": "heldout-en-9",
+      "language": "en",
+      "task": "followup",
+      "message": "Keep the dates and use Spain as source market.",
+      "context": {
+        "analysis_request": {
+          "metric_id": "overnight_stays",
+          "operation": "compare",
+          "period": {
+            "start": "2025-02-01",
+            "end": "2025-02-28"
+          },
+          "comparison_period": {
+            "start": "2024-02-01",
+            "end": "2024-02-29"
+          },
+          "filters": {
+            "destination": "Agadir"
+          }
+        },
+        "report_id": "evaluation_report",
+        "report_version": 1
+      },
+      "expected": {
+        "action": "analyse",
+        "market": "Espagne"
+      }
+    },
+    {
+      "id": "heldout-en-10",
+      "language": "en",
+      "task": "ambiguity",
+      "message": "Compare performance without a defined indicator.",
+      "context": {},
+      "expected": {
+        "action": "clarify"
+      }
+    },
+    {
+      "id": "heldout-en-11",
+      "language": "en",
+      "task": "revision",
+      "message": "I want the executive summary in Spanish.",
+      "context": {
+        "analysis_request": {
+          "metric_id": "overnight_stays",
+          "operation": "compare",
+          "period": {
+            "start": "2025-02-01",
+            "end": "2025-02-28"
+          },
+          "comparison_period": {
+            "start": "2024-02-01",
+            "end": "2024-02-29"
+          },
+          "filters": {
+            "destination": "Agadir"
+          }
+        },
+        "report_id": "evaluation_report",
+        "report_version": 1
+      },
+      "expected": {
+        "action": "revise",
+        "instruction": "langue:es"
+      }
+    },
+    {
+      "id": "heldout-en-12",
+      "language": "en",
+      "task": "diagnostic",
+      "message": "Analyse source markets using a value-volume matrix, February 2025.",
+      "context": {},
+      "expected": {
+        "action": "diagnostic",
+        "diagnostic_kind": "value_volume"
+      }
+    },
+    {
+      "id": "heldout-es-7",
+      "language": "es",
+      "task": "analysis",
+      "message": "¿Qué llegadas registra Marrakech en marzo 2025?",
+      "context": {},
+      "expected": {
+        "action": "analyse",
+        "metric_id": "arrivals",
+        "destination": "Marrakech",
+        "period.start": "2025-03-01"
+      }
+    },
+    {
+      "id": "heldout-es-8",
+      "language": "es",
+      "task": "analysis",
+      "message": "Para abril 2024, dame las pernoctaciones de Agadir.",
+      "context": {},
+      "expected": {
+        "action": "analyse",
+        "metric_id": "overnight_stays",
+        "destination": "Agadir",
+        "period.start": "2024-04-01"
+      }
+    },
+    {
+      "id": "heldout-es-9",
+      "language": "es",
+      "task": "followup",
+      "message": "Mantén el período y utiliza España como mercado.",
+      "context": {
+        "analysis_request": {
+          "metric_id": "overnight_stays",
+          "operation": "compare",
+          "period": {
+            "start": "2025-02-01",
+            "end": "2025-02-28"
+          },
+          "comparison_period": {
+            "start": "2024-02-01",
+            "end": "2024-02-29"
+          },
+          "filters": {
+            "destination": "Agadir"
+          }
+        },
+        "report_id": "evaluation_report",
+        "report_version": 1
+      },
+      "expected": {
+        "action": "analyse",
+        "market": "Espagne"
+      }
+    },
+    {
+      "id": "heldout-es-10",
+      "language": "es",
+      "task": "ambiguity",
+      "message": "Compara el rendimiento sin un indicador definido.",
+      "context": {},
+      "expected": {
+        "action": "clarify"
+      }
+    },
+    {
+      "id": "heldout-es-11",
+      "language": "es",
+      "task": "revision",
+      "message": "Quiero el resumen en francés.",
+      "context": {
+        "analysis_request": {
+          "metric_id": "overnight_stays",
+          "operation": "compare",
+          "period": {
+            "start": "2025-02-01",
+            "end": "2025-02-28"
+          },
+          "comparison_period": {
+            "start": "2024-02-01",
+            "end": "2024-02-29"
+          },
+          "filters": {
+            "destination": "Agadir"
+          }
+        },
+        "report_id": "evaluation_report",
+        "report_version": 1
+      },
+      "expected": {
+        "action": "revise",
+        "instruction": "langue:fr"
+      }
+    },
+    {
+      "id": "heldout-es-12",
+      "language": "es",
+      "task": "diagnostic",
+      "message": "Analiza los mercados con una matriz valor-volumen en febrero 2025.",
+      "context": {},
+      "expected": {
+        "action": "diagnostic",
+        "diagnostic_kind": "value_volume"
+      }
+    },
+    {
+      "id": "heldout-ar-7",
+      "language": "ar",
+      "task": "analysis",
+      "message": "ما عدد الوافدين إلى مراكش خلال مارس ٢٠٢٥؟",
+      "context": {},
+      "expected": {
+        "action": "analyse",
+        "metric_id": "arrivals",
+        "destination": "Marrakech",
+        "period.start": "2025-03-01"
+      }
+    },
+    {
+      "id": "heldout-ar-8",
+      "language": "ar",
+      "task": "analysis",
+      "message": "أعطني الليالي السياحية لأكادير في أبريل ٢٠٢٤.",
+      "context": {},
+      "expected": {
+        "action": "analyse",
+        "metric_id": "overnight_stays",
+        "destination": "Agadir",
+        "period.start": "2024-04-01"
+      }
+    },
+    {
+      "id": "heldout-ar-9",
+      "language": "ar",
+      "task": "followup",
+      "message": "احتفظ بالفترة واختر إسبانيا كسوق مصدر.",
+      "context": {
+        "analysis_request": {
+          "metric_id": "overnight_stays",
+          "operation": "compare",
+          "period": {
+            "start": "2025-02-01",
+            "end": "2025-02-28"
+          },
+          "comparison_period": {
+            "start": "2024-02-01",
+            "end": "2024-02-29"
+          },
+          "filters": {
+            "destination": "Agadir"
+          }
+        },
+        "report_id": "evaluation_report",
+        "report_version": 1
+      },
+      "expected": {
+        "action": "analyse",
+        "market": "Espagne"
+      }
+    },
+    {
+      "id": "heldout-ar-10",
+      "language": "ar",
+      "task": "ambiguity",
+      "message": "قارن الأداء دون تحديد مؤشر.",
+      "context": {},
+      "expected": {
+        "action": "clarify"
+      }
+    },
+    {
+      "id": "heldout-ar-11",
+      "language": "ar",
+      "task": "revision",
+      "message": "أريد الملخص باللغة الفرنسية.",
+      "context": {
+        "analysis_request": {
+          "metric_id": "overnight_stays",
+          "operation": "compare",
+          "period": {
+            "start": "2025-02-01",
+            "end": "2025-02-28"
+          },
+          "comparison_period": {
+            "start": "2024-02-01",
+            "end": "2024-02-29"
+          },
+          "filters": {
+            "destination": "Agadir"
+          }
+        },
+        "report_id": "evaluation_report",
+        "report_version": 1
+      },
+      "expected": {
+        "action": "revise",
+        "instruction": "langue:fr"
+      }
+    },
+    {
+      "id": "heldout-ar-12",
+      "language": "ar",
+      "task": "diagnostic",
+      "message": "حلل الأسواق بمصفوفة القيمة والحجم في فبراير ٢٠٢٥.",
+      "context": {},
+      "expected": {
+        "action": "diagnostic",
+        "diagnostic_kind": "value_volume"
+      }
+    },
+    {
+      "id": "heldout-ary-7",
+      "language": "ary",
+      "task": "analysis",
+      "message": "فمارس 2025 شحال جاو لمراكش؟",
+      "context": {},
+      "expected": {
+        "action": "analyse",
+        "metric_id": "arrivals",
+        "destination": "Marrakech",
+        "period.start": "2025-03-01"
+      }
+    },
+    {
+      "id": "heldout-ary-8",
+      "language": "ary",
+      "task": "analysis",
+      "message": "وريني الليالي السياحية ديال أكادير فأبريل 2024.",
+      "context": {},
+      "expected": {
+        "action": "analyse",
+        "metric_id": "overnight_stays",
+        "destination": "Agadir",
+        "period.start": "2024-04-01"
+      }
+    },
+    {
+      "id": "heldout-ary-9",
+      "language": "ary",
+      "task": "followup",
+      "message": "خلي نفس الفترة واختار إسبانيا كسوق.",
+      "context": {
+        "analysis_request": {
+          "metric_id": "overnight_stays",
+          "operation": "compare",
+          "period": {
+            "start": "2025-02-01",
+            "end": "2025-02-28"
+          },
+          "comparison_period": {
+            "start": "2024-02-01",
+            "end": "2024-02-29"
+          },
+          "filters": {
+            "destination": "Agadir"
+          }
+        },
+        "report_id": "evaluation_report",
+        "report_version": 1
+      },
+      "expected": {
+        "action": "analyse",
+        "market": "Espagne"
+      }
+    },
+    {
+      "id": "heldout-ary-10",
+      "language": "ary",
+      "task": "ambiguity",
+      "message": "قارن الأداء بلا ما نحدد المؤشر.",
+      "context": {},
+      "expected": {
+        "action": "clarify"
+      }
+    },
+    {
+      "id": "heldout-ary-11",
+      "language": "ary",
+      "task": "revision",
+      "message": "بغيت الخلاصة بالإنجليزية.",
+      "context": {
+        "analysis_request": {
+          "metric_id": "overnight_stays",
+          "operation": "compare",
+          "period": {
+            "start": "2025-02-01",
+            "end": "2025-02-28"
+          },
+          "comparison_period": {
+            "start": "2024-02-01",
+            "end": "2024-02-29"
+          },
+          "filters": {
+            "destination": "Agadir"
+          }
+        },
+        "report_id": "evaluation_report",
+        "report_version": 1
+      },
+      "expected": {
+        "action": "revise",
+        "instruction": "langue:en"
+      }
+    },
+    {
+      "id": "heldout-ary-12",
+      "language": "ary",
+      "task": "diagnostic",
+      "message": "حلل الأسواق بمصفوفة القيمة والحجم ففبراير 2025.",
+      "context": {},
+      "expected": {
+        "action": "diagnostic",
+        "diagnostic_kind": "value_volume"
+      }
+    }
+  ]
+}

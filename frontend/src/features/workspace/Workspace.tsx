@@ -9,12 +9,14 @@ import { api } from '../reports/api';
 import { AnalysisCard, metricNames } from './AnalysisCard';
 import { DocumentsPanel } from './DocumentsPanel';
 import { ReportPanel } from './ReportPanel';
+import { DiagnosticPanel, DiagnosticResult } from './DiagnosticPanel';
 import {
   workspaceApi,
   type Alert,
   type Catalog,
   type Message,
   type Status,
+  type Job,
 } from './api';
 import './workspace.css';
 
@@ -24,10 +26,12 @@ type View =
   | 'reports'
   | 'documents'
   | 'alerts'
-  | 'sources';
+  | 'sources'
+  | 'diagnostics';
 const navigation: { id: View; label: string; icon: string }[] = [
   { id: 'conversation', label: 'Conversation', icon: 'chat' },
   { id: 'analyses', label: 'Analyses', icon: 'chart' },
+  { id: 'diagnostics', label: 'Diagnostics & cartes', icon: 'chart' },
   { id: 'reports', label: 'Rapports', icon: 'report' },
   { id: 'documents', label: 'Documents', icon: 'folder' },
   { id: 'alerts', label: 'Alertes', icon: 'bell' },
@@ -196,22 +200,19 @@ export function Workspace() {
   const textarea = useRef<HTMLTextAreaElement>(null),
     bottom = useRef<HTMLDivElement>(null);
   const latest = analyses[0];
+  const [job, setJob] = useState<Job>();
+  const submitting = useRef(false);
 
   async function load() {
     const identity = await workspaceApi.me();
     setUser(identity);
     const results = await Promise.allSettled([
-      workspaceApi.catalog(),
-      workspaceApi.status(),
-      workspaceApi.analyses(),
-      api.list(),
-      workspaceApi.alerts(),
+      workspaceApi.catalog().then(setCatalog),
+      workspaceApi.status().then(setStatus),
+      workspaceApi.analyses().then(setAnalyses),
+      api.list().then(setReports),
+      workspaceApi.alerts().then(setAlerts),
     ]);
-    if (results[0].status === 'fulfilled') setCatalog(results[0].value);
-    if (results[1].status === 'fulfilled') setStatus(results[1].value);
-    if (results[2].status === 'fulfilled') setAnalyses(results[2].value);
-    if (results[3].status === 'fulfilled') setReports(results[3].value);
-    if (results[4].status === 'fulfilled') setAlerts(results[4].value);
     const failures = results.filter((r) => r.status === 'rejected');
     if (failures.length)
       setError(
@@ -240,13 +241,39 @@ export function Workspace() {
   useEffect(() => {
     bottom.current?.scrollIntoView?.({ behavior: 'auto', block: 'nearest' });
   }, [messages, busy]);
+  useEffect(() => {
+    if (!user) return;
+    const timer = setInterval(() => {
+      void Promise.all([workspaceApi.alerts(), workspaceApi.status()])
+        .then(([items, state]) => {
+          setAlerts(items);
+          setStatus(state);
+        })
+        .catch(() =>
+          setError(
+            'La vérification périodique de l’interface a échoué ; vérifier les services.',
+          ),
+        );
+    }, 30000);
+    return () => clearInterval(timer);
+  }, [user?.user_id]);
 
   async function send(value = draft) {
-    if (!value.trim() || busy) return;
+    if (!value.trim() || busy || submitting.current) return;
+    submitting.current = true;
     setBusy('Interprétation de la demande et exécution des outils autorisés…');
     setError('');
     try {
-      const response = await workspaceApi.send(value, cid, version, language);
+      const response = await workspaceApi.send(
+        value,
+        cid,
+        version,
+        language,
+        (next) => {
+          setJob(next);
+          setBusy(`Étape en cours : ${next.stage.replaceAll('_', ' ')}`);
+        },
+      );
       setCid(response.conversation_id);
       setVersion(response.version);
       setDraft('');
@@ -290,6 +317,8 @@ export function Workspace() {
       );
     } finally {
       setBusy('');
+      setJob(undefined);
+      submitting.current = false;
     }
   }
   async function createFor(analysis: AnalysisResult) {
@@ -501,6 +530,8 @@ export function Workspace() {
                   </>
                 ) : view === 'analyses' ? (
                   'Les données mises en perspective.'
+                ) : view === 'diagnostics' ? (
+                  'Comparer les hypothèses et les territoires.'
                 ) : view === 'reports' ? (
                   'Des constats aux décisions.'
                 ) : view === 'documents' ? (
@@ -556,7 +587,27 @@ export function Workspace() {
                 Le traitement est local. Aucun pourcentage d’avancement n’est
                 estimé.
               </span>
+              {job && (
+                <button
+                  className="w-secondary"
+                  onClick={() =>
+                    void workspaceApi
+                      .cancel(job.id)
+                      .then(() =>
+                        setBusy(
+                          'Annulation demandée ; attente de la prochaine étape…',
+                        ),
+                      )
+                      .catch((e) => setError(e.message))
+                  }
+                >
+                  Demander l’annulation
+                </button>
+              )}
             </div>
+          )}
+          {view === 'diagnostics' && (
+            <DiagnosticPanel destinations={user.allowed_territories} />
           )}
           {view === 'conversation' && (
             <div className="w-chat-layout">
@@ -617,6 +668,54 @@ export function Workspace() {
                           {m.role === 'user' ? 'VOUS' : 'ONMT INTELLIGENCE'}
                         </div>
                         <p dir="auto">{m.message}</p>
+                        {m.diagnostic && (
+                          <DiagnosticResult data={m.diagnostic} />
+                        )}
+                        {m.kpi_proposal && (
+                          <div className="w-panel">
+                            <strong>
+                              Brouillon : {m.kpi_proposal.definition.label}
+                            </strong>
+                            <p>
+                              <code>{m.kpi_proposal.example.formula}</code>
+                            </p>
+                            <p>
+                              Exemple : {m.kpi_proposal.example.value}{' '}
+                              {m.kpi_proposal.example.unit}
+                            </p>
+                            <button
+                              className="w-secondary"
+                              disabled={!!busy}
+                              onClick={() => void send('Je confirme')}
+                            >
+                              Confirmer cet enregistrement
+                            </button>
+                          </div>
+                        )}
+                        {m.deck_path && (
+                          <a
+                            href={m.deck_path}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            Ouvrir la présentation PDF · 25 diapositives
+                          </a>
+                        )}
+                        {m.agent_trace && (
+                          <details className="w-execution">
+                            <summary>
+                              Tâches des agents et outils utilisés
+                            </summary>
+                            <ol>
+                              {m.agent_trace.map((a, j) => (
+                                <li key={j}>
+                                  <strong>{a.agent}</strong> · {a.decision}
+                                  <small> {a.tools.join(', ')}</small>
+                                </li>
+                              ))}
+                            </ol>
+                          </details>
+                        )}
                         {m.analysis && (
                           <AnalysisCard
                             analysis={m.analysis}
@@ -882,14 +981,21 @@ export function Workspace() {
             <section className="w-panel">
               <div className="w-card-heading">
                 <h2>Signaux détectés</h2>
-                <span className="w-tag">
-                  À l’actualisation · seuil −15 % annuel
-                </span>
+                <span className="w-tag">Seuil −15 % annuel</span>
               </div>
               <p className="w-muted">
                 Ce contrôle compare chaque mois au même mois de l’année
-                précédente. Il ne prouve aucune cause et ne tourne pas en
-                continu.
+                précédente. Il ne prouve aucune cause. Le contrôle périodique
+                fonctionne lorsque le service local est actif.
+              </p>
+              <p>
+                Surveillance :{' '}
+                {status?.monitor?.running ? 'active' : 'désactivée'} · dernière
+                vérification réussie :{' '}
+                {status?.monitor?.last_success_at || 'aucune'}
+                {status?.monitor?.error
+                  ? ` · erreur : ${status.monitor.error}`
+                  : ''}
               </p>
               {!alerts.length ? (
                 <Empty
@@ -912,12 +1018,17 @@ export function Workspace() {
                       </span>
                       <h3>{a.destination}</h3>
                       <strong>{a.change_pct} %</strong>
-                      <p>Nuitées · {a.month.slice(0, 7)}</p>
+                      <p>
+                        {a.metric_id === 'arrivals' ? 'Arrivées' : 'Nuitées'}{' '}
+                        {a.market ? `· ${a.market}` : ''} ·{' '}
+                        {a.month.slice(0, 7)}
+                      </p>
                       <details className="w-proof">
                         <summary>Voir le constat et la règle</summary>
                         <p>
-                          {a.current} nuitées contre {a.previous} l’année
-                          précédente.
+                          {a.current}{' '}
+                          {a.metric_id === 'arrivals' ? 'arrivées' : 'nuitées'}{' '}
+                          contre {a.previous} l’année précédente.
                         </p>
                         <p>{a.source}</p>
                         <code>{a.formula}</code>

@@ -1,4 +1,5 @@
 import logging
+from contextlib import asynccontextmanager
 from uuid import uuid4
 
 from fastapi import FastAPI, Request
@@ -21,7 +22,15 @@ from app.reports.storage import Store
 
 def create_app(settings=None, provider=None, access_resolver=None, embedder=None, exporter=None):
     settings = settings or Settings()
-    app = FastAPI(title='ONMT AI — Reporting et RAG', version='0.1.0')
+    @asynccontextmanager
+    async def lifespan(app):
+        if hasattr(app.state,'monitor'): app.state.monitor.start()
+        try:
+            yield
+        finally:
+            if hasattr(app.state,'monitor'): app.state.monitor.stop()
+            if hasattr(app.state,'jobs'): app.state.jobs.close()
+    app = FastAPI(title='ONMT AI — Analyses conversationnelles', version='0.2.0',lifespan=lifespan)
     store = Store(settings.data_dir)
     provider = provider or (SyntheticAnalysisProvider(ROOT / 'examples' / 'contracts') if settings.demo else UnconnectedAnalysisProvider())
     embedder = embedder or (DemoHashEmbedder() if settings.demo_embeddings else
@@ -59,6 +68,10 @@ def create_app(settings=None, provider=None, access_resolver=None, embedder=None
         app.state.application_state,app.state.auth,app.state.catalog = state,auth,catalog
         app.state.analytics = analytics
         app.state.alerts = AlertService(catalog,state)
+        from app.core.monitor import Monitor
+        from app.core.jobs import Jobs
+        app.state.monitor = Monitor(state,app.state.alerts,settings.monitor_interval)
+        app.state.jobs = Jobs(state)
         app.state.access_resolver = access_resolver or auth.resolve
         app.state.reports.provider = analytics
         parser = IntentParser(OllamaPlanner(settings.ollama_model,settings.ollama_timeout,settings.ollama_context))
@@ -76,6 +89,13 @@ def create_app(settings=None, provider=None, access_resolver=None, embedder=None
             if origin and origin != str(request.base_url).rstrip('/') and origin not in ['http://127.0.0.1:5173','http://localhost:5173','http://127.0.0.1:8000','http://localhost:8000']:
                 return JSONResponse(status_code=403,content={'request_id':request.state.request_id,'code':'forbidden','message':'Origine non autorisée.'})
         response = await call_next(request)
+        if settings.full_app:
+            actor='anonymous'
+            try: actor=app.state.access_resolver(request).user_id
+            except AppError: pass
+            route=request.scope.get('route')
+            store.audit_log.append(actor,request.state.request_id,request.method,
+                getattr(route,'path','unknown_route'),outcome=str(response.status_code))
         response.headers['X-Request-ID'] = request.state.request_id
         response.headers['Cache-Control'] = 'no-store'
         return response

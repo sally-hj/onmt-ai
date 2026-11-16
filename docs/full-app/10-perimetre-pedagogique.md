@@ -1,38 +1,21 @@
-# Périmètre confirmé et reste à développer
+# Périmètre pédagogique et travail restant
 
-Décision transmise le 14 novembre 2026 : les QVD synthétiques sont les données de référence définitives. Aucune attente de fichiers ONMT ne conditionne le rendu. Les définitions du corpus sont documentées, les calculs doivent être exacts sur ce corpus et les traitements IA réellement exécutés.
+État du 16 novembre 2026. Les QVD synthétiques natifs constituent la référence définitive. Aucune réception de données réelles n'est nécessaire. Les trois originaux sont préservés ; les compléments restent séparés et reproductibles. Configurer d'autres QVD est une extension facultative.
 
-## Ce qui est acquis sur les données
+Les écarts précédents « 16 KPI », « graphe à deux nœuds », « pas de BCG/Butler/KPI personnalisé/deck », « alertes seulement à l'actualisation » ne décrivent plus le code courant. Voir la [matrice actuelle](01-couverture-cps.md), le [catalogue](12-catalogue-et-conventions.md) et le [bilan](14-validation-completion.md).
 
-Le format QVD est natif ; les trois domaines partagent un grain contrôlé et des clés cohérentes. Génération à graine fixe, dictionnaire, scénarios de baisse/saisonnalité, attendus manuels et jeu défectueux séparé sont disponibles. Le marquage synthétique reste requis dans l'interface, les réponses et les exports. Les documents du parcours peuvent eux aussi être fictifs, en PDF textuel ou réellement scanné.
+| Travail restant | État précis / validation utile |
+| --- | --- |
+| Qualité multilingue | Relecture humaine arabe/darija et campagne complète des cas tenus à part. Une intention correcte ne valide pas la rédaction économique. |
+| Conversation entièrement réelle de 50+ tours | Les 60 tours actuels éprouvent contexte et outils avec interpréteur simulé. Une campagne Ollama de même ampleur, avec cinq révisions, reste distincte. |
+| Interprétation métier | Seuils, IPR, attribution de marge et piliers TTCI sont des conventions fictives transparentes. Butler indique son incertitude ; poursuivre la grille humaine de qualité. |
+| Prévision économique | La projection saisonnière sur cinq ans reste mécanique, sans exogènes ni preuve de causalité. |
+| Délais et robustesse rédactionnelle | Les sorties non conformes sont refusées ; l'inférence sur CPU peut durer plusieurs minutes ou échouer. Aucun SLA inférieur à une minute démontré. |
+| Voix, streaming, routage multi-modèles | Fonctions CPS non réalisées. La décision sur les données ne réduit pas automatiquement ces exigences. |
+| Accessibilité et charge | Clavier/mobile/contrastes échantillonnés disponibles ; lecteurs d'écran, volumes et 50 utilisateurs restent à éprouver. |
+| Sécurité industrielle | Comptes locaux et audit chaîné utiles ; SSO, chiffrement et WORM absents. Une ancre externe et un stockage séparé seraient nécessaires contre un administrateur du disque. Rétention industrielle de 30 jours non certifiée. |
+| Exploitation permanente | La boucle d'alertes fonctionne backend et ordinateur actifs ; ni disponibilité 24/7, ni PRA, ni envoi externe garantis. |
 
-Ce choix n'autorise pas à remplacer l'inférence, les embeddings, l'OCR ou les calculs par une réponse précalculée présentée comme fonctionnelle. Les clients simulés restent des outils de test identifiés ; le mode normal utilise les services locaux configurés et signale leur indisponibilité.
+Les calculs, OCR, embeddings, recherche, génération et exports sont réels dans les essais identifiés comme tels. Les interpréteurs simulés et gabarits sont signalés. Le marquage synthétique reste visible dans l'interface et les exports.
 
-## Travail fonctionnel qui reste au bilan
-
-Les priorités ci-dessous sont une proposition de réalisation, **pas une nouvelle réduction de périmètre**. Les critères du CPS restent dans la [matrice](01-couverture-cps.md) tant qu'un arbitrage explicite ne les adapte pas.
-
-| Priorité | Écart constaté | Prochaine réalisation / preuve attendue |
-| --- | --- | --- |
-| P1 | 16 KPI, pas la totalité des 30+ | Définir les indicateurs suivants avec conventions pédagogiques, enrichir les champs synthétiques nécessaires, ajouter un oracle indépendant par calcul. Aucune fausse conformité à un référentiel international. |
-| P1 | Diagnostic, recommandations et notes courtes | Enrichir le diagnostic avec faits calculés, hypothèses clairement séparées, sections/audiences, longs rapports et grille de relecture. Les sources ne suffisent pas à prouver la qualité économique du texte. |
-| P1 | Révisions avancées et ajout de données/domaines | Tester cinq modifications successives, conserver les analyses utiles quand on ajoute un KPI, recalculer les dépendances et vérifier chiffres/citations/versions par vrai parcours conversationnel. Le remplacement actuel ne démontre pas tous les ajouts demandés. |
-| P1 | Conversation longue et multilingue | Campagne de 50+ échanges, périodes/marchés référencés, ambiguïtés et erreurs ; plusieurs demandes par langue, darija et traductions. Un seul cas réussi par langue n'est pas une recette. |
-| P1 | Scénarios inter-domaines et agents spécialisés | Démontrer collecte autorisée, calculs Finance/Commercial/Performance et rapport dans une seule demande, puis workflows spécialisés contrôlés. Deux nœuds LangGraph ne prouvent pas une équipe autonome. |
-| P2 | BCG, Butler et benchmarks étrangers | Choisir des définitions/conventions explicites, créer les comparateurs synthétiques utiles et vérifier matrices/classements. L'absence de données réelles n'est plus un motif pour supprimer ces fonctions. |
-| P2 | Création persistante de KPI via chat | Langage d'expressions limité, unités/champs/permissions validés, persistance et tests ; aucun `eval` de code utilisateur ou LLM. |
-| P2 | Présentation 25 slides | Produire un vrai deck PDF avec graphiques calculés, lisibilité et marquage ; charte pédagogique cohérente sans prétendre à une charte officiellement homologuée. |
-| P2 | Alertes, rafraîchissement et reprise | Étendre les règles et scénarios de résolution, vérifier les résultats obsolètes et l'actualisation contrôlée. Ne pas confondre ce déclenchement avec un monitoring 24/7. |
-| P2 | Protection et traçabilité applicatives | Étendre profils/classifications et audit, tester refus et révocations. Définir l'adaptation attendue du chiffrement/audit immuable ; les données synthétiques ne dispensent pas de protéger les accès. |
-| À arbitrer explicitement | Voix, streaming et routage multi-modèles | Présents dans la cible CPS, pas réalisés actuellement. Confirmer leur adaptation locale et développer les fonctions retenues ; l'accord sur les données seul ne les met pas hors périmètre. |
-| Validation transversale | UX, accessibilité, exactitude et latence | Recette plus large des graphiques/exports/RTL/erreurs, lecteurs d'écran et temps mesurés sur ce PC. Les délais industriels ne sont pas atteints par le simple succès d'un scénario. |
-
-## Exigences industrielles distinctes
-
-Le développement local exclut déjà déploiement, Docker, CI/CD et infrastructure cloud. Datacenter certifié, GPU souverains industriels, PRA multi-sites et SLA d'exploitation ne sont pas des acquis de ce projet local. L'intégration SSO d'entreprise est distincte des comptes locaux réalisés. Les protections applicatives et fonctions de restitution restent, elles, à évaluer dans le projet pédagogique.
-
-Les QVD de production et leur recette ONMT ne sont plus à classer comme « bloqués/en attente ». Leur compatibilité relève uniquement de l'extension facultative de configuration. Les conventions actuelles du corpus et des KPI sont la référence du projet ; un indicateur ambigu doit recevoir une définition pédagogique transparente, pas une formule attribuée sans preuve à l'ONMT.
-
-## Conditions de finalisation à suivre
-
-Le rendu pourra être annoncé comme complet lorsque les fonctions retenues auront une preuve adaptée : calculs sur oracle indépendant, contrats et droits, parcours réels IA/documentaires, conversations et révisions, exports lisibles et erreurs explicites. La matrice doit conserver chaque écart non résolu, ou l'arbitrage qui l'adapte. La décision sur les données ne constitue pas cette validation fonctionnelle globale.
+Datacenter, GPU industriel, cloud, Docker et CI/CD sont hors périmètre local du chantier. Cette limite d'infrastructure ne supprime pas les écarts fonctionnels ci-dessus. Aucune conformité intégrale au CPS n'est revendiquée.

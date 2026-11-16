@@ -1,6 +1,11 @@
 """Définitions explicites ; aucune formule envoyée par le LLM n'est exécutée."""
 from dataclasses import asdict, dataclass
 import re
+import json
+from app.core.config import ROOT
+
+TTCI_GROUPS=json.loads((ROOT/'config/ttci2019.json').read_text(encoding='utf-8'))['groups']
+TTCI_FIELDS=[field for group in TTCI_GROUPS for field in group]
 
 
 @dataclass(frozen=True)
@@ -12,9 +17,24 @@ class Metric:
     formula: str
     kind: str = 'sum'
     limit: str = 'Définition pédagogique du corpus synthétique de référence ; aucune représentativité statistique ONMT revendiquée.'
+    expression: dict | None = None
+    version: int = 1
+
+    def describe(self, sources):
+        return {**asdict(self), 'formula': self.source_formula(sources),
+                'dimensions': ['destination', 'market'], 'grain': 'month',
+                'aggregation': 'somme des lignes' if self.kind == 'sum' else 'calcul sur sommes ou distribution du périmètre, jamais moyenne des ratios',
+                'missing_values': 'source invalide : refus ; période absente ou dénominateur nul : null',
+                'interpretation': self.limit}
 
     def source_formula(self, sources):
         """Décrit les colonnes réellement lues, même après un changement de mapping."""
+        if self.expression:
+            result=self.formula
+            for sid, fields in self.fields.items():
+                for field in fields:
+                    result=result.replace(sid+'.'+field,sid+'.'+sources[sid]['fields'][field])
+            return result
         mapping={field:(sid+'.' if len(self.fields)>1 else '')+sources[sid]['fields'][field]
                  for sid,fields in self.fields.items() for field in fields}
         pattern=r'\b('+'|'.join(re.escape(field) for field in sorted(mapping,key=len,reverse=True))+r')\b'
@@ -41,13 +61,123 @@ METRICS = {m.id:m for m in [
            'Rapprochement descriptif de périmètres identiques, pas un ROI causal ni une attribution des nuitées aux dépenses.')
 ]}
 
+# Chaque entrée représente un calcul distinct. Les indices sont des conventions
+# pédagogiques explicitement nommées, pas des indices officiels OMT/WEF.
+for metric in [
+    Metric('receipts_per_arrival','DMT — Recettes par arrivée','MAD/arrivee',{'performance':['travel_receipts'],'commercial':['arrivals']},'SUM(travel_receipts) / SUM(arrivals)','ratio'),
+    Metric('receipts_per_night','DMN — Recettes par nuitée','MAD/nuitee',{'performance':['travel_receipts'],'commercial':['overnight_stays']},'SUM(travel_receipts) / SUM(overnight_stays)','ratio'),
+    Metric('spend_per_arrival','Dépenses promotionnelles par arrivée','MAD/arrivee',{'finance':['spent'],'commercial':['arrivals']},'SUM(spent) / SUM(arrivals)','ratio'),
+    Metric('commitment_rate','Taux d’engagement','%',{'finance':['committed','budget']},'100 * SUM(committed) / SUM(budget)','percent'),
+    Metric('budget_remaining','Crédits non exécutés','MAD',{'finance':['budget','spent']},'SUM(budget) - SUM(spent)','difference'),
+    Metric('commitments_unpaid','Engagements non exécutés','MAD',{'finance':['committed','spent']},'SUM(committed) - SUM(spent)','difference'),
+    Metric('impressions','Impressions publicitaires','impressions',{'performance':['impressions']},'SUM(impressions)'),
+    Metric('clicks','Clics publicitaires','clics',{'performance':['clicks']},'SUM(clicks)'),
+    Metric('cost_per_click','Coût par clic','MAD/clic',{'finance':['spent'],'performance':['clicks']},'SUM(spent) / SUM(clicks)','ratio'),
+    Metric('cost_per_thousand','Coût de mille impressions','MAD/1000 impressions',{'finance':['spent'],'performance':['impressions']},'1000 * SUM(spent) / SUM(impressions)','per_thousand'),
+    Metric('rooms_available','Capacité disponible','chambres-nuits',{'performance':['rooms_available']},'SUM(rooms_available)'),
+    Metric('rooms_sold','Chambres-nuits vendues','chambres-nuits',{'performance':['rooms_sold']},'SUM(rooms_sold)'),
+    Metric('international_arrivals','ATI — Arrivées internationales','arrivees',{'commercial':['arrivals']},'SUM(arrivals WHERE market != Maroc)','international'),
+    Metric('market_concentration','ICME — Concentration des marchés émetteurs','indice 0-10000',{'commercial':['arrivals']},'10000 * SUM((arrivals_market / arrivals_total)^2)','hhi'),
+    Metric('market_diversification','IDT — Diversification des marchés','indice 0-1',{'commercial':['arrivals']},'1 - SUM((arrivals_market / arrivals_total)^2)','diversification'),
+    Metric('tourism_gini','CGT — Inégalité territoriale des nuitées','indice 0-1',{'commercial':['overnight_stays']},'SUM_i SUM_j ABS(nights_i - nights_j) / (2 * n * SUM(nights))','gini'),
+    Metric('seasonality','ISM — Coefficient de variation mensuel','%',{'commercial':['overnight_stays']},'100 * STDDEV_POP(monthly_nights) / MEAN(monthly_nights)','seasonality', 'Au moins douze mois consécutifs ; mélange de tendance et saisonnalité, pas une correction saisonnière.'),
+    Metric('annual_growth','TCA — Croissance des arrivées entre années complètes','%',{'commercial':['arrivals']},'100 * (arrivals_last_year / arrivals_previous_year - 1)','annual_growth'),
+    Metric('annual_cagr','TCAM — Croissance annuelle moyenne des arrivées','%',{'commercial':['arrivals']},'100 * ((arrivals_last_year / arrivals_first_year)^(1/years_elapsed) - 1)','cagr'),
+    Metric('conversions','Conversions attribuées fictives','conversions',{'extension':['conversions']},'SUM(conversions)'),
+    Metric('campaign_conversion','ECT — Conversion des clics','%',{'extension':['conversions'],'performance':['clicks']},'100 * SUM(conversions) / SUM(clicks)','percent'),
+    Metric('event_attendance','Fréquentation événementielle','entrees',{'extension':['event_attendance']},'SUM(event_attendance)'),
+    Metric('event_fill','SFE — Remplissage événementiel','%',{'extension':['event_attendance','event_capacity']},'100 * SUM(event_attendance) / SUM(event_capacity)','percent'),
+    Metric('tourism_gdp_share','CT-PIB — Part de valeur ajoutée touristique','%',{'extension':['tourism_gva','gdp']},'100 * SUM(tourism_gva) / SUM(gdp)','percent','Valeur ajoutée directe fictive ; ni compte satellite officiel ni effets indirects.'),
+    Metric('employment_share','Part d’emploi touristique','%',{'extension':['tourism_jobs','total_jobs']},'100 * SUM(tourism_jobs) / SUM(total_jobs)','percent'),
+    Metric('web_conversion','Conversion des visites web','%',{'extension':['conversions','web_visits']},'100 * SUM(conversions) / SUM(web_visits)','percent'),
+    Metric('marketing_visibility','SVM — Engagements pour mille impressions','engagements/1000 impressions',{'extension':['engagements'],'performance':['impressions']},'1000 * SUM(engagements) / SUM(impressions)','per_thousand'),
+    Metric('campaign_roi','IRT — Marge attribuée moins coût, sur coût','%',{'extension_finance':['attributed_margin'],'finance':['spent']},'100 * (SUM(attributed_margin) - SUM(spent)) / SUM(spent)','roi','Attribution imposée par le générateur fictif ; ce scénario ne démontre aucune causalité publicitaire.'),
+    Metric('regional_performance','IPR — Score pédagogique de pilotage territorial','score base 100',{'commercial':['arrivals','seats'],'finance':['spent','budget'],'performance':['clicks','impressions']},
+           '100 * (0.5 * (SUM(arrivals)/SUM(seats))/0.65 + 0.3 * (SUM(spent)/SUM(budget))/0.80 + 0.2 * (SUM(clicks)/SUM(impressions))/0.03)','regional_index',
+           'Poids et cibles pédagogiques : remplissage sièges 65%, exécution 80%, clics 3%. Score descriptif de destination, non homologué et sans effet causal.'),
+    Metric('ttci2019_pedagogical','TTCI 2019 — Agrégation de piliers synthétiques','score 1-7',{'competitiveness':TTCI_FIELDS,'commercial':['arrivals']},
+           'WEIGHTED_MEAN_BY(arrivals, MEAN(MEAN(pillars_1_5), MEAN(pillars_6_9), MEAN(pillars_10_12), MEAN(pillars_13_14)))','ttci',
+           'Agrégation historique TTCI 2019 sur quatorze piliers déjà normalisés fictifs ; adaptation mensuelle/destination pondérée par arrivées. Ni score WEF officiel, ni reconstruction des indicateurs bruts, ni TTDI actuel.'),
+]:
+    METRICS[metric.id] = metric
+
+FIELD_UNITS = {'overnight_stays':'nuitees','arrivals':'arrivees','seats':'sieges','bookings':'reservations',
+               'rooms_sold':'chambres-nuits','rooms_available':'chambres-nuits','impressions':'impressions','clicks':'clics',
+               'conversions':'conversions','event_attendance':'entrees','event_capacity':'places','tourism_jobs':'emplois',
+               'total_jobs':'emplois','web_visits':'visites','engagements':'engagements'}
+FIELD_UNITS.update({field:'score_1_7' for field in TTCI_FIELDS})
+
 
 def metric_catalog(access, sources):
-    return [asdict(m) for m in METRICS.values() if all(sources[s]['module'] in access.allowed_modules for s in m.fields)]
+    return [m.describe(sources) for m in METRICS.values() if all(s in sources and sources[s]['module'] in access.allowed_modules for s in m.fields)]
 
 
 def calculate(metric, totals):
     values = [totals[(source,field)] for source,fields in metric.fields.items() for field in fields]
     if metric.kind == 'sum':
         return round(values[0],4)
-    return round(values[0]/values[1]*(100 if metric.kind == 'percent' else 1),4) if values[1] else None
+    if metric.kind == 'difference':
+        return round(values[0]-values[1],4)
+    if metric.kind == 'roi':
+        return round(100*(values[0]-values[1])/values[1],4) if values[1] else None
+    return round(values[0]/values[1]*({'percent':100,'per_thousand':1000}.get(metric.kind,1)),4) if values[1] else None
+
+
+def evaluate(metric, data):
+    """Réducteurs autorisés sur données structurées ; aucun langage exécutable."""
+    import math
+    from collections import defaultdict
+    if metric.expression:
+        from .custom import KpiDefinition, term_sum
+        spec=KpiDefinition.model_validate(metric.expression)
+        a,b=term_sum(spec.numerator,data),term_sum(spec.denominator,data)
+        if spec.operation=='difference': return round(a-b,4)
+        return round(a/b*(100 if spec.operation=='percent' else 1),4) if b else None
+    if metric.kind=='regional_index':
+        totals={(s,f):sum(r[f] for r in rows) for s,rows in data.items() for f in metric.fields[s]}
+        a,b,c,d,e,f=[totals[key] for key in [('commercial','arrivals'),('commercial','seats'),('finance','spent'),('finance','budget'),('performance','clicks'),('performance','impressions')]]
+        return round(100*(.5*(a/b)/.65+.3*(c/d)/.8+.2*(e/f)/.03),4) if b and d and f else None
+    if metric.kind=='ttci':
+        weights={(r['month'],r['destination'],r['market']):r['arrivals'] for r in data['commercial']}
+        denominator=sum(weights.values())
+        numerator=sum(weights[(r['month'],r['destination'],r['market'])]*sum(sum(r[f] for f in group)/len(group) for group in TTCI_GROUPS)/4 for r in data['competitiveness'])
+        return round(numerator/denominator,4) if denominator else None
+    rows = data[next(iter(metric.fields))]
+    field = metric.fields[next(iter(metric.fields))][0]
+    if metric.kind == 'international':
+        return sum(r[field] for r in rows if r['market'] != 'Maroc')
+    if metric.kind in ['hhi','diversification','gini','seasonality','annual_growth','cagr']:
+        group = {'hhi':'market','diversification':'market','gini':'destination'}.get(metric.kind,'month')
+        totals = defaultdict(float)
+        for row in rows:
+            totals[row[group]] += row[field]
+        values = list(totals.values()); total = sum(values)
+        if not total:
+            return None
+        if metric.kind in ['hhi','diversification']:
+            concentration = sum((v/total)**2 for v in values)
+            value = concentration*10000 if metric.kind == 'hhi' else 1-concentration
+        elif metric.kind == 'gini':
+            value = sum(abs(a-b) for a in values for b in values)/(2*len(values)*total)
+        elif metric.kind == 'seasonality':
+            months = sorted(totals)
+            distance = (int(months[-1][:4])-int(months[0][:4]))*12+int(months[-1][5:7])-int(months[0][5:7])+1
+            if len(months)<12 or distance != len(months):
+                return None
+            mean=total/len(values)
+            value=100*math.sqrt(sum((v-mean)**2 for v in values)/len(values))/mean
+        else:
+            years = defaultdict(list)
+            for month, value in totals.items():
+                years[int(month[:4])].append(value)
+            ordered=sorted(years)
+            if len(ordered)<2 or any(len(years[y])!=12 for y in ordered):
+                return None
+            first = ordered[-2] if metric.kind=='annual_growth' else ordered[0]
+            baseline=sum(years[first]); last=sum(years[ordered[-1]])
+            if not baseline or (metric.kind=='annual_growth' and ordered[-1]-first!=1):
+                return None
+            value=100*((last/baseline)**(1/(ordered[-1]-first))-1)
+        return round(value,4)
+    totals={(s,f):sum(r[f] for r in rows) for s,rows in data.items() for f in metric.fields[s]}
+    return calculate(metric,totals)

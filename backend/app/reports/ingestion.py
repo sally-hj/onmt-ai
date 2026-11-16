@@ -30,6 +30,9 @@ class DocumentService:
                 if can_read(doc.policy,access_context) and doc.policy.owner_id==access_context.user_id:
                     try:
                         self.index.add(doc)
+                        doc.index_identity=self.index.embedder.identity
+                        with self.store.connect() as db:
+                            db.execute('UPDATE documents SET payload=? WHERE id=? AND version=?',(doc.model_dump_json(),doc.document_id,doc.version))
                     except AppError:
                         raise
                     except Exception as exc:
@@ -127,6 +130,7 @@ class DocumentService:
         doc = DocumentRecord(document_id=doc_id, version=version, sha256=digest, metadata=metadata,
                              policy=previous.policy if previous else private_policy(access), passages=passages,
                              warnings=warnings, processing_signature=signature)
+        doc.index_identity=self.index.embedder.identity
         try:
             self.index.add(doc)
             self.store.save_document(doc.model_dump(mode='json'), content)

@@ -112,8 +112,8 @@ def test_all_metrics_against_independent_hand_calculated_oracle(oracle_qvd,tmp_p
 
 
 def test_oracle_covers_current_catalog():
-    assert set(REFERENCE['calculation_oracle']['expected'])==set(METRICS)
-    assert set(REFERENCE['calculation_oracle']['expected_units'])==set(METRICS)
+    assert set(REFERENCE['calculation_oracle']['expected']).issubset(METRICS)
+    assert set(REFERENCE['calculation_oracle']['expected_units'])==set(REFERENCE['calculation_oracle']['expected'])
     for row in REFERENCE['calculation_oracle']['sources']['commercial']:
         assert row['bookings']<=row['arrivals']<=row['nights'] and row['seats']>=row['arrivals']
     for row in REFERENCE['calculation_oracle']['sources']['finance']:

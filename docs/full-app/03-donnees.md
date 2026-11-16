@@ -1,5 +1,7 @@
 # Les QVD et leur dictionnaire
 
+> Actualisation du 16 novembre : cette page explique le socle d'intégration. Pour les ajouts courants (46 KPI, diagnostics, spécialistes, tâches et présentation), consulter la [matrice](01-couverture-cps.md), les [conventions](12-catalogue-et-conventions.md), le [corpus complémentaire](15-corpus-complementaire.md) et le [guide des fichiers](13-fichiers-et-pipeline.md). Les résultats exécutés sont dans le [bilan courant](14-validation-completion.md).
+
 **Référence définitive du projet pédagogique depuis la décision du professeur du 14 novembre 2026.** Aucun QVD réel ne sera fourni ni attendu avant le rendu. La conformité de ce corpus ne vaut pas validation des fonctions encore manquantes : voir la [matrice](01-couverture-cps.md).
 
 Les QVD générés sont de vrais fichiers binaires au format Qlik, et non des CSV renommés. `synthetic.generate()` utilise PyQvd pour les écrire et les relit immédiatement pour comparer l'ensemble des cellules. La génération n'appelle jamais le moteur analytique pour fabriquer ses résultats attendus.

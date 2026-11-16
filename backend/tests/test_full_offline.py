@@ -20,6 +20,6 @@ def test_real_ollama_unavailable_does_not_create_report():
         assert response.json()['code']=='tool_failed'
         assert 'Ollama' in response.json()['message']
         assert client.get('/api/reports').json()==before
-        output=ROOT/'local_data/full-app-results/ollama-offline.json'
+        output=ROOT/'local_data/cps-completion-results/ollama-offline.json'
         output.parent.mkdir(parents=True,exist_ok=True)
         output.write_text(json.dumps({'status':response.status_code,'error':response.json(),'reports_unchanged':True},ensure_ascii=False,indent=2),encoding='utf-8')

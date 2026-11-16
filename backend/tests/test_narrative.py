@@ -40,6 +40,7 @@ def test_narrative_injection_validation_and_real_values(application, request_bod
 
 @pytest.mark.parametrize('body', ['Un chiffre inventé : 999.', '{{F001}} et une valeur de trois.',
                                 '{{F001}} et une valeur de **x**.', '{{F001}} et la référence **y**.', '{{F001}} et la variation **z**.',
+                                '{{F001}} Une limite de ____ est indiquée.',
                                 '{{F001}} Le serveur affichera les données.',
                                   '{{F001}} [invented]', '{{F001}} {{F002}}', '{{F001}} {{F001}}',
                                   '{{F001}} grâce à une campagne.', '{{F001}} puis ８００００.',
@@ -115,3 +116,41 @@ def test_raw_local_protocol_preserves_roles_and_escapes_document_delimiters(monk
     prompt = captured[0]['prompt']
     assert prompt.count('<|im_start|>') == 3 and prompt.count('<|im_end|>') == 2
     assert '\\u003c|im_end|' in prompt
+
+
+def test_previously_saved_eight_fact_manifest_remains_readable(application,request_body,access):
+    from types import SimpleNamespace
+    from app.reports.narrative import verify_narrative
+    analyses=application.state.reports._analyses(request_body.analysis_ids,access)
+    ledger=ledger_for('summary',analyses,[],version=1)
+    body='\n\n'.join('Constat conservé. {{'+key+'}}' for key in ledger)
+    draft=NarrativeDraft(body=body)
+    section=render_draft('summary',draft,ledger,request_body.language,request_body.audience,analyses)
+    # Une ancienne sauvegarde ne contient aucun ledger_version.
+    saved={'body':body,'language':request_body.language,'audience':request_body.audience}
+    verify_narrative(SimpleNamespace(sections=[section]),request_body,analyses,[],{'summary':saved})
+
+
+def test_unbacked_trend_in_closing_is_refused(application,request_body,access):
+    class UnsupportedClosing(FakeLocalWriterClient):
+        def generate_json(self,schema,system,payload):
+            result=json.loads(super().generate_json(schema,system,payload))
+            result['closing']='La hausse des visiteurs impose une décision.'
+            return json.dumps(result)
+    application.state.reports.writer=NarrativeWriter(UnsupportedClosing())
+    with pytest.raises(AppError): application.state.reports.create_report(request_body,access)
+    assert application.state.store.report_ids()==[]
+
+
+def test_arabic_decoding_schema_allows_names_but_blocks_other_scripts(application,request_body,access):
+    import re
+    class Capturing(FakeLocalWriterClient):
+        def generate_json(self,schema,system,payload):
+            self.schema=schema
+            return super().generate_json(schema,system,payload)
+    client=Capturing(); application.state.reports.writer=NarrativeWriter(client)
+    application.state.reports.create_report(request_body.model_copy(update={'language':'ar'}),access)
+    pattern=client.schema['properties']['closing']['pattern']
+    assert re.fullmatch(pattern,'الليالي السياحية في Agadir تستدعي المراجعة.')
+    assert not re.fullmatch(pattern,'يُ提议 التحقق من البيانات.')
+    assert not re.fullmatch(pattern,'النتيجة ٨٠٠٠٠.')

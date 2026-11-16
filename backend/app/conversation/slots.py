@@ -23,6 +23,10 @@ def normalized(text):
 
 def explicit_periods(message):
     text = normalized(message)
+    quarters=list(re.finditer(r'(?<!\w)(?:q|t|trimestre\s*)([1-4])\s*(20\d{2})(?!\d)',text))
+    if quarters:
+        return [{'start':f'{m.group(2)}-{(int(m.group(1))-1)*3+1:02}-01',
+                 'end':f'{m.group(2)}-{int(m.group(1))*3:02}-{calendar.monthrange(int(m.group(2)),int(m.group(1))*3)[1]}'} for m in quarters[:2]]
     names = {normalized(name):index+1 for index,line in enumerate(MONTHS) for name in line.split()}
     pattern = r'(?<!\w)(?:و)?(?:ف|ب)?('+'|'.join(sorted(names,key=len,reverse=True))+r')\s+(20\d{2})(?!\d)'
     matches = [(names[m.group(1)],int(m.group(2))) for m in re.finditer(pattern,text)]
@@ -34,9 +38,14 @@ def explicit_periods(message):
     return [{'start':f'{year}-{month:02}-01','end':f'{year}-{month:02}-{calendar.monthrange(year,month)[1]}'} for month,year in matches[:2]]
 
 
-def ground_intent(intent,message,allowed=None):
+def ground_intent(intent,message,allowed=None,context=None):
     payload = intent.model_dump()
     text = normalized(message)
+    multiple_group=None
+    payload['clear_filters']=[]
+    for dimension,pattern in [('market',r'tous les marches|all markets|todos los mercados|جميع الاسواق|كل الاسواق'),
+                              ('destination',r'tous les territoires|toutes les destinations|all destinations|todos los destinos|جميع الوجهات')]:
+        if re.search(pattern,text): payload['clear_filters'].append(dimension)
     if allowed is not None:
         multiple_group=None
         for dimension,key in [('destination','destinations'),('market','markets')]:
@@ -77,6 +86,14 @@ def ground_intent(intent,message,allowed=None):
                 payload['instruction']='langue:'+language
                 payload['language']=language
                 break
+    previous=(context or {}).get('analysis_request',{})
+    followup=re.match(r'\s*(?:et\b|and\b|¿?y\b|و|conserve\b|keep\b|manten\b|احتفظ|خلي)',text)
+    explicit_report_or_tool=re.search(r'rapport|\breport\b|informe|\bnote\b|kpi|matrice|matrix|scenario|scénario|تقرير|التقرير|مصفوفة|سيناريو',text)
+    if (followup and not explicit_report_or_tool and len(message)<400 and multiple_group is None
+            and (payload.get('destination') or payload.get('market') or payload['clear_filters'])
+            and previous.get('metric_id') and previous.get('period')
+            and (previous.get('operation')!='compare' or previous.get('comparison_period'))):
+        payload.update(action='analyse',clarification=None,instruction=None,dimensions=None)
     periods = explicit_periods(message)
     if not periods:
         return type(intent).model_validate(payload)

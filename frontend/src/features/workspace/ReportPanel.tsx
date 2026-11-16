@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { api } from '../reports/api';
 import type { ReportResult, SectionId } from '../reports/types';
+import { workspaceApi, type Job } from './api';
 
 export function ReportPanel({
   report,
@@ -17,7 +18,16 @@ export function ReportPanel({
     report.sections[0]?.section_id || 'summary',
   );
   const [preview, setPreview] = useState(false);
+  const [job, setJob] = useState<Job>(),
+    [deck, setDeck] = useState('');
+  const running = useRef(false);
+  function progress(next: Job) {
+    setJob(next);
+    setBusy('Étape : ' + next.stage.replaceAll('_', ' '));
+  }
   async function run(label: string, operation: () => Promise<void>) {
+    if (running.current) return;
+    running.current = true;
     setBusy(label);
     onError('');
     try {
@@ -26,6 +36,8 @@ export function ReportPanel({
       onError(e instanceof Error ? e.message : 'Erreur du rapport.');
     } finally {
       setBusy('');
+      setJob(undefined);
+      running.current = false;
     }
   }
   return (
@@ -48,6 +60,20 @@ export function ReportPanel({
           <p dir="auto">{s.content}</p>
         </section>
       ))}
+      {!!report.proposals?.length && (
+        <section className="w-report-section">
+          <h4>Propositions liées aux constats</h4>
+          {report.proposals.map((p, i) => (
+            <p key={i}>
+              {p.proposal} {p.validation}
+              <br />
+              <small>
+                {p.analysis_id} · {p.condition}
+              </small>
+            </p>
+          ))}
+        </section>
+      )}
       <details className="w-proof">
         <summary>
           Références et limites ({report.sources.length} sources)
@@ -74,13 +100,21 @@ export function ReportPanel({
           e.preventDefault();
           void run('Révision en cours…', async () =>
             onChange(
-              await api.revise({
-                request_id: crypto.randomUUID(),
-                report_id: report.report_id,
-                base_version: report.version,
-                section_id: section,
-                instruction,
-              }),
+              (
+                await workspaceApi.reportOperation(
+                  'revise',
+                  {
+                    revision: {
+                      request_id: crypto.randomUUID(),
+                      report_id: report.report_id,
+                      base_version: report.version,
+                      section_id: section,
+                      instruction,
+                    },
+                  },
+                  progress,
+                )
+              ).report!,
             ),
           );
         }}
@@ -125,11 +159,43 @@ export function ReportPanel({
       </form>
       <div className="w-report-actions">
         <button
+          className="w-secondary"
+          disabled={!!busy}
+          onClick={() =>
+            void run('Préparation de la présentation…', async () => {
+              const result = await workspaceApi.reportOperation(
+                'presentation',
+                { report_id: report.report_id, version: report.version },
+                progress,
+              );
+              setDeck(result.deck_path || '');
+            })
+          }
+        >
+          Préparer les 25 diapositives
+        </button>
+        {deck && (
+          <a
+            className="w-secondary"
+            href={deck}
+            target="_blank"
+            rel="noreferrer"
+          >
+            Ouvrir la présentation PDF ↗
+          </a>
+        )}
+        <button
           className="w-primary"
           disabled={!!busy}
           onClick={() =>
             void run('Préparation du PDF…', async () => {
-              const next = await api.export(report.report_id, report.version);
+              const next = (
+                await workspaceApi.reportOperation(
+                  'export',
+                  { report_id: report.report_id, version: report.version },
+                  progress,
+                )
+              ).report!;
               onChange(next);
               setPreview(true);
             })
@@ -154,6 +220,14 @@ export function ReportPanel({
       {busy && (
         <p role="status" className="w-loading">
           {busy}
+          {job && (
+            <button
+              className="w-secondary"
+              onClick={() => void workspaceApi.cancel(job.id)}
+            >
+              Demander l’annulation
+            </button>
+          )}
         </p>
       )}
       {preview && report.download_path && (

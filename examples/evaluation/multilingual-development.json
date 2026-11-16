@@ -1,0 +1,14 @@
+{
+  "version": "1",
+  "split": "development",
+  "cases": [
+    {
+      "language": "fr",
+      "message": "Compare les nuitées à Agadir en février 2025 et février 2024."
+    },
+    {
+      "language": "ary",
+      "message": "قارن ليا الليالي السياحية فأكادير ففبراير 2025 وففبراير 2024."
+    }
+  ]
+}

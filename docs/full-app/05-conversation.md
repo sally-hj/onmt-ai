@@ -1,5 +1,7 @@
 # Hayat : comprendre, conserver le contexte, appeler les outils
 
+> Actualisation du 16 novembre : cette page explique le socle d'intégration. Pour les ajouts courants (46 KPI, diagnostics, spécialistes, tâches et présentation), consulter la [matrice](01-couverture-cps.md), les [conventions](12-catalogue-et-conventions.md), le [corpus complémentaire](15-corpus-complementaire.md) et le [guide des fichiers](13-fichiers-et-pipeline.md). Les résultats exécutés sont dans le [bilan courant](14-validation-completion.md).
+
 ## Identité locale
 
 `LocalAuth` crée deux comptes de développement : `direction` et `regional`. Le premier peut lire les trois domaines et six destinations ; le second n'accède pas à Finance et reste limité à Agadir/Marrakech. Les politiques sont stockées côté serveur ; sélectionner une langue ou envoyer un rôle dans le navigateur ne change pas les droits.

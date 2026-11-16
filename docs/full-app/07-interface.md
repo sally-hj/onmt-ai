@@ -1,5 +1,7 @@
 # Une interface organisée autour de la conversation
 
+> Actualisation du 16 novembre : cette page explique le socle d'intégration. Pour les ajouts courants (46 KPI, diagnostics, spécialistes, tâches et présentation), consulter la [matrice](01-couverture-cps.md), les [conventions](12-catalogue-et-conventions.md), le [corpus complémentaire](15-corpus-complementaire.md) et le [guide des fichiers](13-fichiers-et-pipeline.md). Les résultats exécutés sont dans le [bilan courant](14-validation-completion.md).
+
 L'interface complète remplace la page de formulaire comme accueil. L'ancienne page Salma est conservée pour compatibilité et ses tests, sous `/?legacy=1` ; elle n'est pas le parcours principal.
 
 ## Direction visuelle

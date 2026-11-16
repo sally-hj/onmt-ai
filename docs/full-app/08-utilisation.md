@@ -1,21 +1,19 @@
 # Démarrer, démontrer et modifier le projet
 
-Toutes les commandes sont PowerShell depuis `C:\Users\OWNEER\onmt-ai`. Fermer l'ancien backend Salma s'il utilise déjà le port 8000 avant de lancer l'application complète. Un terminal occupé par un serveur doit rester ouvert.
+Toutes les commandes sont PowerShell depuis la racine du dépôt. Vérifier que le port 8000 est libre avant de lancer l'application complète. Un terminal occupé par un serveur doit rester ouvert.
 
 Le corpus synthétique est la référence définitive du rendu. Aucune commande d'import de données ONMT ni réception d'un QVD réel n'est nécessaire pour finaliser ce périmètre. Les traitements locaux demeurent réels.
 
 ## Préparation
 
-Sur le PC de développement, les modèles, Tesseract et Chromium ont déjà été préparés. Pour installer les dépendances supplémentaires et régénérer les QVD :
+Sur un nouveau poste Windows avec Python 3.11 et Node.js, la préparation s'effectue une seule fois :
 
 ```powershell
 cd C:\Users\OWNEER\onmt-ai
-.\.venv\Scripts\python.exe -m pip install -r backend\requirements-full.txt
-$env:PYTHONPATH = 'backend'
-.\.venv\Scripts\python.exe -m app.data_access.synthetic
+.\scripts\setup-local.ps1 -DownloadModelsAndTools
 ```
 
-Sur un nouveau PC, créer aussi `.venv`, installer les modèles/outils selon [le guide local IA](../salma-local-ai.md), installer Chromium et lancer `npm ci` dans `frontend`. Ne pas utiliser le fichier `requirements.txt` initial non verrouillé comme seule description de l'environnement validé. `requirements-full.txt` fixe les dépendances directes de l'intégration ; le relevé `requirements-full-tested.lock.txt` décrit l'environnement effectivement testé.
+Le script installe `backend/requirements.txt`, Chromium et les paquets npm, prépare les outils locaux et préserve les trois QVD de référence s'ils existent déjà. Il refuse une référence partiellement présente. Les téléchargements initiaux nécessitent Internet ; l'application fonctionne ensuite avec les fichiers locaux. Le relevé `requirements-tested.lock.txt` décrit les dépendances transitives vérifiées. L'import du modèle dans Ollama puis la bibliothèque initiale sont détaillés dans le [README](../../README.md). Pour les démarrages suivants, utiliser directement les trois terminaux ci-dessous.
 
 ## Trois terminaux
 
@@ -74,10 +72,10 @@ Une comparaison territoriale directe est aussi possible : « Compare les nuitée
 7. Demander : « Traduis la synthèse en arabe. » Vérifier la nouvelle version et faire relire la langue.
 8. Ouvrir Rapports, prévisualiser le PDF et télécharger la version choisie.
 9. Demander un nouveau calcul dans le rapport, par exemple « Mets à jour le rapport avec le budget pour la même destination et les mêmes périodes. » Le modèle doit sélectionner `update_report` et `budget`. Vérifier les nouvelles sources Finance et la version ; une interprétation ambiguë doit être clarifiée.
-10. Ouvrir Alertes et lancer l'actualisation : le signal Agadir février 2025 est calculé, avec la règle et la source.
+10. Ouvrir Alertes : le démarrage normal vérifie périodiquement les règles, avec dernière réussite et erreurs persistantes. L'actualisation manuelle reste possible. `ONMT_MONITOR_INTERVAL=0` désactive cette boucle ; elle s'arrête avec le backend.
 11. Se déconnecter puis utiliser `regional`. Les ressources privées de `direction`, Finance et les territoires non autorisés doivent être refusés.
 
-Le scénario de recalcul est testé avec un interpréteur simulé dans les tests d'intégration ; sa compréhension dans toutes les formulations libres n'est pas garantie. Consulter le relevé réel avant de le présenter comme un essai IA validé.
+Le scénario de recalcul et les conversations de 60 tours sont testés avec un interpréteur simulé ; les essais réels sont séparés dans le [bilan courant](14-validation-completion.md). Les formulations libres ne sont pas toutes garanties. L'espace « Diagnostics & cartes » propose également BCG internationale/régionale, Valeur–Volume, Butler, carte et scénarios. Les rapports peuvent exporter une présentation PDF de 25 diapositives.
 
 ## Modifier les sources et les indicateurs
 
