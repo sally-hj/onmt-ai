@@ -9,12 +9,13 @@ body{margin:0;font:17px Arial,'Segoe UI',sans-serif;color:#18352e;background:#f7
 .content{max-height:510px}.plot{height:220px;width:100%;direction:ltr}.plot text{font-size:12px}
 .footer{position:absolute;bottom:8mm;left:18mm;right:18mm;font-size:11px;display:flex;justify-content:space-between;border-top:1px solid #abc4b8;padding-top:7px}
 .muted{color:#556c63;font-size:13px} .missing{padding:18px;background:#fff1cf}
+.matrix-plot{height:180px}.matrix-key{display:grid;grid-template-columns:1fr 1fr;gap:4px 20px;font-size:12px;direction:ltr}.matrix-key span{overflow-wrap:anywhere}
 </style><body>
 {% for slide in slides %}<article class="slide">
 <div class="brand">ONMT AI · {% if payload.result.is_synthetic %}<span class="synthetic">{{ t.synthetic }}</span>{% endif %}</div>
 <h1>{{ slide.title }}</h1><div class="content {{ 'missing' if slide.missing else '' }}">
 {% for line in slide.lines %}<p>{{ line }}</p>{% endfor %}
-{% if slide.matrix %}<svg class="plot" viewBox="0 0 1100 280"><path d="M45 20V240H1050" fill="none" stroke="#71897e"/>{% for point in slide.matrix %}<circle cx="{{ point.x }}" cy="{{ point.y }}" r="6" fill="#226556"/><text x="{{ point.x+10 }}" y="{{ point.y-8 }}">{{ point.label }} · {{ point.a }} / {{ point.b }}</text>{% endfor %}</svg>{% endif %}
+{% if slide.matrix %}<svg class="plot matrix-plot" viewBox="0 0 1100 280"><path d="M45 20V240H1050" fill="none" stroke="#71897e"/>{% for point in slide.matrix %}<circle cx="{{ point.x }}" cy="{{ point.y }}" r="6" fill="#226556"/><path d="M{{ point.x }} {{ point.y }}L{{ point.x+10 }} {{ point.y-16-(loop.index0%4)*22 }}" fill="none" stroke="#71897e"/><text x="{{ point.x+12 }}" y="{{ point.y-16-(loop.index0%4)*22 }}">{{ loop.index }}</text>{% endfor %}</svg><div class="matrix-key">{% for point in slide.matrix %}<span>{{ loop.index }} · {{ point.label }} · x={{ point.a }} / y={{ point.b }}</span>{% endfor %}</div>{% endif %}
 {% for plot in slide.plots %}<p class="muted" dir="ltr">{{ plot.metric }} · {{ plot.unit }} · {{ plot.source }}</p>
 <svg class="plot" viewBox="0 0 1100 280"><path d="M35 25V240H1060" fill="none" stroke="#71897e"/>
 {% for point in plot.points %}<circle cx="{{ point.x }}" cy="{{ point.y }}" r="3" fill="{{ '#b65b42' if point.kind=='forecast' else '#226556' }}"><title>{{ point.date }} : {{ point.value }} {{ plot.unit }} · {{ point.kind }}</title></circle>{% endfor %}

@@ -73,6 +73,8 @@ def validate_draft(draft, ledger):
     if set(counts) != set(ledger) or any(count != 1 for count in counts.values()):
         raise AppError('tool_failed', 'La rédaction omet, duplique ou invente une preuve ; section refusée.', 422)
     remaining = unicodedata.normalize('NFKC', TOKEN.sub('', text))
+    if re.search(r'_{2,}|\bTODO\b',remaining,re.I):
+        raise AppError('tool_failed','Texte à compléter interdit : rédige une limite complète sans emplacement vide.',422)
     if re.search(r'\b[xyz]\b',remaining,re.I):
         raise AppError('tool_failed','Variables x, y ou z interdites, même en minuscules ou en Markdown. Rédige une phrase complète sans valeur ; le serveur ajoute le constat chiffré séparément.',422)
     if re.search(r'\b(serveur|server|servidor|json|llm|tokens?)\b|الخادم',remaining,re.I):
@@ -168,7 +170,9 @@ class NarrativeWriter:
         names = {'fr':'français','en':'English','es':'español','ar':'العربية الفصحى','ary':'الدارجة المغربية'}
         system += f'\nToute la prose doit être rédigée en {names[language]}. Les noms des champs JSON restent inchangés.'
         if language in ['ar','ary']:
-            system += '\nاكتب الجمل بالعربية، بدون أرقام أو أسباب غير مثبتة. الليالي السياحية لا تعني النهارات.'
+            system += ('\nاكتب الجمل بالعربية، بدون أرقام أو أسباب غير مثبتة. الليالي السياحية لا تعني النهارات. '
+                       'البيانات اصطناعية أو افتراضية، ولا تصفها بأنها مزيفة. '
+                       'الخاتمة تقترح التحقق من نطاق البيانات وحدود الاستنتاج قبل القرار، بدون تكرار الاتجاهات أو تعليمات الكتابة.')
         system += ('\nLa clôture propose une vérification concrète avant décision et rappelle une limite. '
                    'Elle ne résume aucune hausse ou baisse et ne formule aucun constat chiffré ni hypothèse causale. '
                    'Une ou deux phrases courtes. Les introductions D présentent seulement le rôle des extraits documentaires. '
@@ -180,6 +184,11 @@ class NarrativeWriter:
                    'untrusted_title':request.title}
         prose_schema = {'type': 'string', 'minLength': 1, 'maxLength': 160,
                         'pattern': '^[^0-9\u00b2\u00b3\u00b9\u0660-\u0669\u06f0-\u06f9\u2070-\u2099\u2160-\u2188\u2460-\u249b\u2776-\u2793\uff10-\uff19%％{}\\[\\]]*$'}
+        if language in ['ar','ary']:
+            # Contraindre aussi le décodage : le contrôle a posteriori ne suffit
+            # pas quand le petit modèle insère un mot chinois dans une phrase arabe.
+            names_pattern='|'.join(re.escape(name) for name in GLOSSARY['proper_names']+GLOSSARY['allowed_acronyms'])
+            prose_schema['pattern']=r"^(?:[\u0600-\u065f\u066a-\u06ef\u06fa-\u06ff\u0750-\u077f\u08a0-\u08ff\u200c\u200d .,;:!?«»'’()–—-]|(?:"+names_pattern+r"))*$"
         schema = EditorialDraft.model_json_schema()
         schema['properties']['closing'] = {**prose_schema, 'maxLength': 240}
         schema['properties']['introductions'] = {'type': 'object', 'properties': {k: prose_schema for k in ledger},

@@ -59,6 +59,16 @@ def test_real_complete_note_deck_and_arabic_revision(tmp_path):
     output=ROOT/'local_data/cps-completion-results';output.mkdir(exist_ok=True,parents=True)
     run={'at':datetime.now(timezone.utc).isoformat(),'commit':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),
          'working_tree_dirty':bool(subprocess.check_output(['git','status','--porcelain'],text=True).strip()),'python':platform.python_version(),'model':'onmt-qwen25:3b','mode':'real_models'}
+    attempts=[]; original_generate=app.state.reports.writer.client.generate_json
+    def capture(schema,system,payload):
+        # Données exclusivement fictives de cet essai : conserver les refus et
+        # sorties réelles pour diagnostiquer sans relancer tout le rapport.
+        raw=original_generate(schema,system,payload)
+        attempts.append({'section':payload['section'],'language':payload['language'],'raw':raw,
+            'previous_error':payload.get('validation_feedback'),'metrics':app.state.reports.writer.client.last_metrics})
+        (output/'pipeline-writer-attempts.json').write_text(json.dumps(attempts,ensure_ascii=False,indent=2),encoding='utf-8')
+        return raw
+    app.state.reports.writer.client.generate_json=capture
     try:
         document,_=app.state.documents.ingest_pdf(synthetic_mixed_pdf(),DocumentMetadata(title='Nuitées — méthodologie synthétique',language='fr',synthetic=True,kind='methodology'),access)
         assert any(p.extraction_method=='ocr' for p in document.passages)
@@ -87,6 +97,8 @@ def test_real_complete_note_deck_and_arabic_revision(tmp_path):
             with pdfplumber.open(io.BytesIO(content)) as pdf:
                 assert len(pdf.pages)==pages
                 assert '80000' in '\n'.join(p.extract_text() or '' for p in pdf.pages)
+        run.update(french_report_status='passed',report=report.model_dump(mode='json'))
+        (output/'pipeline-real.json').write_text(json.dumps(run,ensure_ascii=False,indent=2),encoding='utf-8')
         revised=app.state.reports.revise_report(ReportRevisionRequest(request_id='real-ar',report_id=report.report_id,base_version=1,section_id='summary',instruction='langue:ar'),access)
         assert revised.version==2 and '80000 nuitees' in revised.sections[0].content
         assert any('\u0600'<=c<='\u06ff' for c in revised.sections[0].content)

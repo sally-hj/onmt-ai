@@ -40,6 +40,7 @@ def test_narrative_injection_validation_and_real_values(application, request_bod
 
 @pytest.mark.parametrize('body', ['Un chiffre inventé : 999.', '{{F001}} et une valeur de trois.',
                                 '{{F001}} et une valeur de **x**.', '{{F001}} et la référence **y**.', '{{F001}} et la variation **z**.',
+                                '{{F001}} Une limite de ____ est indiquée.',
                                 '{{F001}} Le serveur affichera les données.',
                                   '{{F001}} [invented]', '{{F001}} {{F002}}', '{{F001}} {{F001}}',
                                   '{{F001}} grâce à une campagne.', '{{F001}} puis ８００００.',
@@ -139,3 +140,17 @@ def test_unbacked_trend_in_closing_is_refused(application,request_body,access):
     application.state.reports.writer=NarrativeWriter(UnsupportedClosing())
     with pytest.raises(AppError): application.state.reports.create_report(request_body,access)
     assert application.state.store.report_ids()==[]
+
+
+def test_arabic_decoding_schema_allows_names_but_blocks_other_scripts(application,request_body,access):
+    import re
+    class Capturing(FakeLocalWriterClient):
+        def generate_json(self,schema,system,payload):
+            self.schema=schema
+            return super().generate_json(schema,system,payload)
+    client=Capturing(); application.state.reports.writer=NarrativeWriter(client)
+    application.state.reports.create_report(request_body.model_copy(update={'language':'ar'}),access)
+    pattern=client.schema['properties']['closing']['pattern']
+    assert re.fullmatch(pattern,'الليالي السياحية في Agadir تستدعي المراجعة.')
+    assert not re.fullmatch(pattern,'يُ提议 التحقق من البيانات.')
+    assert not re.fullmatch(pattern,'النتيجة ٨٠٠٠٠.')

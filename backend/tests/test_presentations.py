@@ -24,8 +24,16 @@ def test_native_qvd_report_deck_25_pages_access_and_synthetic_marker(tmp_path,la
     for metric in ['overnight_stays','budget','spent','click_rate']:
         analyses.append(app.state.analytics.run(AnalysisRequest(request_id='deck',operation='compare',metric_id=metric,
             period={'start':'2025-02-01','end':'2025-02-28'},comparison_period={'start':'2024-02-01','end':'2024-02-29'},filters={'destination':'Agadir'},language=language),access))
+    from app.data_access.supplement import prepare
+    from app.analytics.diagnostics import Diagnostics
+    prepare(tmp_path/'qvd')
+    tool=Diagnostics(app.state.analytics)
+    analysis_request=AnalysisRequest(request_id='diagnostic-deck',operation='value',metric_id='overnight_stays',period=analyses[0].period,
+        comparison_period=analyses[0].comparison_period,filters={'destination':'Agadir'},language=language)
+    matrix=tool.international(analysis_request.period,analysis_request.comparison_period,access,regional=language=='ar')
+    diagnostics=[app.state.analytics.products.save(d,access) for d in [matrix,tool.value_volume(analysis_request,access),tool.map(analysis_request,access),tool.scenario(analysis_request,access,-10)]]
     report=app.state.reports.create_report(ReportRequest(request_id='deck',analysis_ids=[a.analysis_id for a in analyses],title='Agadir — corpus synthétique',language=language,
-        audience='direction',layout='strategic_15',sections=['summary','diagnostic','comparison','forecast','recommendations','limitations']),access)
+        diagnostic_ids=[d['diagnostic_id'] for d in diagnostics],audience='direction',layout='strategic_15',sections=['summary','diagnostic','comparison','forecast','recommendations','limitations']),access)
     payload=app.state.store.report(report.report_id)
     assert len(build_slides(payload))==25
     content=app.state.reports.export_deck(report.report_id,access)
